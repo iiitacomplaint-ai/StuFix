@@ -176,3 +176,8 @@
 // };
 
 // export default SubInspectorComplaintPage;
+function SubInspectorComplaintPage() {
+  return <div>Admin Performance</div>;
+}
+
+export default SubInspectorComplaintPage;

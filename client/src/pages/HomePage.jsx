@@ -18,11 +18,7 @@ import HomeCallToAction from '../components/HomeCallToAction';
 import HomeFAQ from '../components/HomeFAQ';
 import HomeHowItWorks from '../components/HomeHowItWorks';
 import HomeScrollingSlider from '../components/HomeScrollingSlider';
-import HomeTestimonial from '../components/HomeTestimonial';
-import HomeSuccessStories from '../components/HomeSuccessStories';
 import HomeStats from '../components/HomeStats';
-import HomeWantedCriminal from '../components/HomeWantedCriminal';
-import HomeMissingPerson from '../components/HomeMissingPerson';
 const HomePage = () => {
   const navigate = useNavigate();
 
@@ -52,8 +48,6 @@ const HomePage = () => {
       <HomeStats />
       <HomeSuccessStories />
       <HomeScrollingSlider />
-      <HomeMissingPerson />
-      <HomeWantedCriminal />
       <HomeHowItWorks />
       <HomeTestimonial />
       <HomeFAQ />

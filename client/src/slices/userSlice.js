@@ -2,22 +2,22 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   user: null,
-  policeDetails: null,
+  workerDetails: null, // ✅ renamed from policeDetails — matches your roles
   logedAt: null,
 };
 
 const userSlice = createSlice({
-  name: 'user',
+  name: "user",
   initialState,
   reducers: {
     setUser: (state, action) => {
-      state.user = action.payload.user;
-      state.policeDetails = action.payload.policeDetails || null; // ✅ add policeDetails if present
+      state.user = action.payload.user || null;
+      state.workerDetails = action.payload.workerDetails || null;
       state.logedAt = Date.now();
     },
     updateUser: (state, action) => {
-      state.user = action.payload.user;
-      state.policeDetails = action.payload.policeDetails || state.policeDetails;
+      state.user = action.payload.user || state.user;
+      state.workerDetails = action.payload.workerDetails || state.workerDetails;
       state.logedAt = Date.now();
     },
     resetUser: () => initialState,

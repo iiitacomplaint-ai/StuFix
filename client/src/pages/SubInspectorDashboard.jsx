@@ -221,3 +221,8 @@
 // };
 
 // export default SubInspectorDashboard;
+function SubInspectorDashboard() {
+  return <div>Admin Performance</div>;
+}
+
+export default SubInspectorDashboard;

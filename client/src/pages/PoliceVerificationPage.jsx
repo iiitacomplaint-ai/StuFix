@@ -94,3 +94,8 @@
 // };
 
 // export default PoliceVerificationPage;
+function PoliceVerificationPage() {
+  return <div>Admin Performance</div>;
+}
+
+export default PoliceVerificationPage;

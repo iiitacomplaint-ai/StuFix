@@ -383,3 +383,8 @@
 // };
 
 // export default CitizenListingPage;
+function CitizenListingPage() {
+  return <div>Admin Performance</div>;
+}
+
+export default CitizenListingPage;

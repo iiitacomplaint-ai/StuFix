@@ -216,3 +216,8 @@
 // };
 
 // export default CitizenDashboard;
+function CitizenDashboard() {
+  return <div>Citizen</div>;
+}
+
+export default CitizenDashboard;

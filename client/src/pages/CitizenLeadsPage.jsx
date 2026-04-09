@@ -251,3 +251,8 @@
 // };
 
 // export default CitizenLeadsPage;
+function CitizenLeadsPage() {
+  return <div>Admin Performance</div>;
+}
+
+export default CitizenLeadsPage;

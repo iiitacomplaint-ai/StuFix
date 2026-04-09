@@ -206,3 +206,8 @@
 // };
 
 // export default AdminPerformanceAnalyser;
+function AdminPerformanceAnalyser() {
+  return <div>Admin Performance</div>;
+}
+
+export default AdminPerformanceAnalyser;

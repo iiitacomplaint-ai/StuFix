@@ -1,73 +1,83 @@
-// import React, { useEffect, useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import PoliceNavbar from './PoliceNavbar';
-// import CitizenNavbar from './CitizenNavbar';
-// import AdminNavbar from './AdminNavbar';
-// import GuestNavbar from './GuestNavbar';
-// import { getToken, isValidToken, getRole } from '../utils/utils';
+/**
+ * Navbar Component
+ * UPDATED: Converted from crime reporting to college complaint system
+ * UPDATED: Changed role names (citizen→user, police→worker)
+ * UPDATED: Updated navbar imports to match new naming
+ * UPDATED: Simplified authentication logic
+ * 
+ * @description Dynamic navbar that renders different navbars based on authentication status and user role
+ * @version 2.0.0 (Updated for complaint management)
+ */
 
-// const Navbar = () => {
-//     const navigate = useNavigate();
-//     const [authState, setAuthState] = useState({
-//         token: null,
-//         valid: false,
-//         role: null,
-//         initialized: false
-//     });
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import UserNavbar from './UserNavbar';
+import AdminNavbar from './AdminNavbar';
+import WorkerNavbar from './WorkerNavbar';
+import GuestNavbar from './GuestNavbar';
+import { getToken, isValidToken, getRole } from '../utils/utils';
 
-//     // Get current token value
-//     const currentToken = getToken();
+const Navbar = () => {
+    const navigate = useNavigate();
+    const [authState, setAuthState] = useState({
+        token: null,
+        valid: false,
+        role: null,
+        initialized: false
+    });
 
-//     // Effect that runs whenever the token changes
-//     useEffect(() => {
-//         const checkAuth = () => {
-//             const token = getToken();
-//             setAuthState({
-//                 token,
-//                 valid: token ? isValidToken() : false,
-//                 role: token ? getRole() : null,
-//                 initialized: true
-//             });
-//         };
+    // Get current token value
+    const currentToken = getToken();
 
-//         // Initial check
-//         checkAuth();
+    // Effect that runs whenever the token changes
+    useEffect(() => {
+        const checkAuth = () => {
+            const token = getToken();
+            setAuthState({
+                token,
+                valid: token ? isValidToken() : false,
+                role: token ? getRole() : null,
+                initialized: true
+            });
+        };
 
-//         // Set up storage event listener as fallback
-//         const storageListener = () => checkAuth();
-//         window.addEventListener('storage', storageListener);
+        // Initial check
+        checkAuth();
 
-//         return () => {
-//             window.removeEventListener('storage', storageListener);
-//         };
-//     }, [currentToken]); // ← Token as dependency
+        // Set up storage event listener as fallback
+        const storageListener = () => checkAuth();
+        window.addEventListener('storage', storageListener);
 
-//     // Instant logout handling
-//     const handleLogout = () => {
-//         localStorage.removeItem('token');
-//         localStorage.removeItem('role');
-//         navigate('/login');
-//         // No need to manually update state - the effect will handle it
-//     };
+        return () => {
+            window.removeEventListener('storage', storageListener);
+        };
+    }, [currentToken]);
 
-//     if (!authState.initialized) {
-//         return null;
-//     }
+    // Instant logout handling
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+    };
 
-//     if (!authState.token || !authState.valid) {
-//         return <GuestNavbar />;
-//     }
+    if (!authState.initialized) {
+        return null;
+    }
 
-//     switch (authState.role?.toLowerCase()) {
-//         case 'citizen':
-//             return <CitizenNavbar onLogout={handleLogout} />;
-//         case 'admin':
-//             return <AdminNavbar onLogout={handleLogout} />;
-//         case 'police':
-//             return <PoliceNavbar onLogout={handleLogout} />;
-//         default:
-//             return <GuestNavbar />;
-//     }
-// };
+    if (!authState.token || !authState.valid) {
+        return <GuestNavbar />;
+    }
 
-// export default Navbar;
+    switch (authState.role?.toLowerCase()) {
+        case 'user':
+            return <UserNavbar onLogout={handleLogout} />;
+        case 'admin':
+            return <AdminNavbar onLogout={handleLogout} />;
+        case 'worker':
+            return <WorkerNavbar onLogout={handleLogout} />;
+        default:
+            return <GuestNavbar />;
+    }
+};
+
+export default Navbar;

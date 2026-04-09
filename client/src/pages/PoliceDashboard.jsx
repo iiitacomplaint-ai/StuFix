@@ -33,3 +33,8 @@
 // };
 
 // export default PoliceDashboard;
+function PoliceDashboard() {
+  return <div>POlice Performance</div>;
+}
+
+export default PoliceDashboard;

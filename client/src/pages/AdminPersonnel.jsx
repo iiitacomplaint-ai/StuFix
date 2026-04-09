@@ -383,3 +383,8 @@
 // }
 
 // export default AdminPersonnel;
+function AdminPersonnel() {
+  return <div>Admin Performance</div>;
+}
+
+export default AdminPersonnel;

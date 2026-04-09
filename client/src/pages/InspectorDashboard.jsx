@@ -221,3 +221,8 @@
 // };
 
 // export default InspectorDashboard;
+function InspectorDashboard() {
+  return <div>Admin Performance</div>;
+}
+
+export default InspectorDashboard;

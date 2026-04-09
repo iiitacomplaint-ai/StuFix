@@ -30,3 +30,8 @@
 // };
 
 // export default TestPincode;
+function TestPincode() {
+  return <div>Admin Performance</div>;
+}
+
+export default TestPincode;

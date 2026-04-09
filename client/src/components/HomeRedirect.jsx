@@ -1,3 +1,14 @@
+/**
+ * HomeRedirect Component
+ * UPDATED: Converted from crime reporting to college complaint system
+ * UPDATED: Changed role names (citizen→user, police→worker)
+ * UPDATED: Updated dashboard routes to match complaint system
+ * UPDATED: Changed landing page route
+ * 
+ * @description Redirects authenticated users to their respective dashboards based on role
+ * @version 2.0.0 (Updated for complaint management)
+ */
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRole, isValidToken } from '../utils/utils';
@@ -10,21 +21,22 @@ const HomeRedirect = () => {
       const role = getRole();
       switch (role) {
         case 'admin':
-          navigate('/admindashboard', { replace: true });
+          navigate('/admin/dashboard', { replace: true });
           break;
-        case 'citizen':
-          navigate('/citizendashboard', { replace: true });
+        case 'user':
+          navigate('/user/dashboard', { replace: true });
           break;
-        case 'police':
-          navigate('/policedashboard', { replace: true });
+        case 'worker':
+          navigate('/worker/dashboard', { replace: true });
           break;
         default:
           // If no valid role, remove token and redirect to landing page
           localStorage.removeItem('token');
-          navigate('/landingpage', { replace: true });
+          localStorage.removeItem('user');
+          navigate('/', { replace: true });
       }
     } else {
-      navigate('/landingpage', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [navigate]);
 

@@ -2,85 +2,90 @@ import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { resetUser } from '../slices/userSlice';
 import { isValidToken } from '../utils/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
+// Routes where TokenExpiryChecker should do nothing
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/forgot-password', '/reset-password'];
 
 const TokenExpiryChecker = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isValidToken()) {
-        console.log("🔴 Token expired. Logging out...");
-        localStorage.removeItem("token");
-        dispatch(resetUser());
-        navigate('/landingpage');
-      }
-    }, 60 * 5000); // Check every 1 minute
+    // ✅ Don't run on public routes — user isn't logged in here
+    if (PUBLIC_ROUTES.some(route => location.pathname.startsWith(route))) {
+      return;
+    }
 
-    return () => clearInterval(interval);
-  }, [dispatch, navigate]);
+    // ✅ No token means not logged in — nothing to check
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    let lastActivityTime = Date.now();
+    let inactivityTimeoutShown = false;
+
+    const updateActivity = () => {
+      lastActivityTime = Date.now();
+      inactivityTimeoutShown = false;
+    };
+
+    const handleLogout = (reason) => {
+      console.log(`🔴 ${reason}. Logging out...`);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      dispatch(resetUser());
+
+      if (reason.includes('inactive')) {
+        toast.info('You have been logged out due to inactivity.');
+      } else if (reason.includes('expired')) {
+        toast.warning('Your session has expired. Please login again.');
+      }
+
+      navigate('/login');
+    };
+
+    const activityEvents = ['mousemove', 'keydown', 'click', 'touchstart', 'scroll', 'mousedown'];
+    activityEvents.forEach(event => window.addEventListener(event, updateActivity));
+
+    const interval = setInterval(() => {
+      const token = localStorage.getItem('token');
+
+      // ✅ If token was removed (logout happened elsewhere), stop checking
+      if (!token) {
+        clearInterval(interval);
+        return;
+      }
+
+      const inactiveTime = Date.now() - lastActivityTime;
+      const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 min
+      const WARNING_TIME = 25 * 60 * 1000;      // 25 min
+
+      // ✅ Check token validity
+      if (!isValidToken()) {
+        handleLogout('Token expired');
+        return;
+      }
+
+      // ✅ Check inactivity
+      if (inactiveTime > INACTIVITY_LIMIT) {
+        handleLogout('User inactive for 30 minutes');
+      } else if (inactiveTime > WARNING_TIME && !inactivityTimeoutShown) {
+        inactivityTimeoutShown = true;
+        toast.warning('You will be logged out due to inactivity in 5 minutes.');
+      }
+    }, 60 * 1000);
+
+    return () => {
+      clearInterval(interval);
+      activityEvents.forEach(event => window.removeEventListener(event, updateActivity));
+    };
+
+  // ✅ Re-run effect when route changes so public route check stays accurate
+  }, [dispatch, navigate, location.pathname]);
 
   return null;
 };
 
 export default TokenExpiryChecker;
-
-
-
-// import { useEffect } from 'react';
-// import { useDispatch } from 'react-redux';
-// import { resetUser } from '../slices/userSlice';
-// import { isValidToken } from '../utils/utils';
-// import { useNavigate } from 'react-router-dom';
-
-// const TokenExpiryChecker = () => {
-//   const dispatch = useDispatch();
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     let lastActivityTime = Date.now();
-
-//     const updateActivity = () => {
-//       lastActivityTime = Date.now();
-//     };
-
-//     // Events to track user activity
-//     window.addEventListener('mousemove', updateActivity);
-//     window.addEventListener('keydown', updateActivity);
-//     window.addEventListener('click', updateActivity);
-//     window.addEventListener('touchstart', updateActivity);
-
-//     const interval = setInterval(() => {
-//       const currentTime = Date.now();
-
-//       // Check if inactive for more than 5 minutes (300,000 ms)
-//       if (currentTime - lastActivityTime > 5 * 60 * 1000) {
-//         console.log("🔴 User inactive for 5 minutes. Logging out...");
-
-//         localStorage.removeItem("token");
-//         dispatch(resetUser());
-//         navigate('/landingpage');
-//       } else if (!isValidToken()) {
-//         // Token expiry check as a backup
-//         console.log("🔴 Token expired. Logging out...");
-//         localStorage.removeItem("token");
-//         dispatch(resetUser());
-//         navigate('/landingpage');
-//       }
-//     }, 60 * 1000); // Check every minute
-
-//     // Cleanup on unmount
-//     return () => {
-//       clearInterval(interval);
-//       window.removeEventListener('mousemove', updateActivity);
-//       window.removeEventListener('keydown', updateActivity);
-//       window.removeEventListener('click', updateActivity);
-//       window.removeEventListener('touchstart', updateActivity);
-//     };
-//   }, [dispatch, navigate]);
-
-//   return null;
-// };
-
-// export default TokenExpiryChecker;

@@ -312,3 +312,8 @@
 // };
 
 // export default PoliceLeadsPage;
+function PoliceLeadsPage() {
+  return <div>Admin Performance</div>;
+}
+
+export default PoliceLeadsPage;

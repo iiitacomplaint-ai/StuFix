@@ -251,3 +251,8 @@
 // };
 
 // export default CitizenComplaintPage;
+function CitizenComplaintPage() {
+  return <div>Admin Performance</div>;
+}
+
+export default CitizenComplaintPage;

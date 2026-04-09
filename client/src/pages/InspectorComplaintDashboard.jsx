@@ -200,3 +200,8 @@
 // };
 
 // export default InspectorComplaintPage;
+function InspectorComplaintPage() {
+  return <div>Admin Performance</div>;
+}
+
+export default InspectorComplaintPage;
