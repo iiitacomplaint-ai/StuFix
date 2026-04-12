@@ -19,25 +19,74 @@ const sendotp = async (req, res) => {
   console.log('request received');
   const { email, type } = req.body;
 
+  // Validate required fields
   if (!email || !type) {
-    return res.status(400).json({ success: false, message: 'Email and type are required to send OTP' });
+    return res.status(400).json({
+      success: false,
+      message: 'Email and type are required to send OTP'
+    });
   }
 
-  const otp = generateOtp();
-  const result = setOtp({ email, otp, type });
+  // Validate type
+  if (!['signup', 'reset'].includes(type)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid OTP type. Must be "signup" or "reset".'
+    });
+  }
 
-  if (!result.status) {
-    return res.status(500).json({ success: false, message: result.message });
+  // Basic email format check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid email format.'
+    });
   }
 
   try {
+    // Check user existence based on type
+    const userCheck = await pool.query(
+      'SELECT user_id FROM users WHERE email = $1',
+      [email]
+    );
+    const userExists = userCheck.rows.length > 0;
+
+    if (type === 'signup' && userExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already registered with this email. Please login.'
+      });
+    }
+
+    if (type === 'reset' && !userExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email. Please sign up.'
+      });
+    }
+
+    // Generate OTP
+    const otp = generateOtp();
+
+    // Store OTP (await in case setOtp is async)
+    const result = await setOtp({ email, otp, type });
+    if (!result || !result.status) {
+      return res.status(500).json({
+        success: false,
+        message: (result && result.message) || 'Failed to store OTP. Please try again.'
+      });
+    }
+
+    // Send OTP email
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"No Reply" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Your OTP for requested action',
       html: mailFormat(otp),
     });
 
+    // Generate short-lived OTP token
     const otpToken = generateOtpToken({ email, type });
 
     return res.status(200).json({
@@ -45,115 +94,101 @@ const sendotp = async (req, res) => {
       message: 'OTP sent successfully',
       otpToken,
     });
+
   } catch (error) {
     console.error('Mail sending failed:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to send OTP. Please try again after a while.',
+      error: error.message
     });
   }
 };
 
 const signup = async (req, res) => {
   console.log("api hit");
-  const { name, email, password, cnfpassword, phone_number, otpToken } = req.body;
-  const role = 'user'; // Changed from 'citizen' to 'user' as per new schema
+  const { name, email, password, cnfpassword, phone_number, dob, otpToken } = req.body;
 
-  // Check required fields
-  if (!otpToken || !name || !email || !password || !cnfpassword || !phone_number) {
+  if (!otpToken || !name || !email || !password || !cnfpassword || !phone_number || !dob) {
     return res.status(400).json({
       success: false,
-      message: 'All fields, including confirm password and OTP token, are required.'
+      message: "All fields, including date of birth and OTP token, are required.",
     });
   }
 
-  // Check password and confirm password match
   if (password !== cnfpassword) {
     return res.status(400).json({
       success: false,
-      message: 'Password and confirm password do not match.'
+      message: "Password and confirm password do not match.",
     });
   }
 
-  // Check password strength
   if (!strongPasswordRegex.test(password)) {
     return res.status(400).json({
       success: false,
-      message: 'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.'
+      message: "Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.",
     });
   }
 
   try {
-    // Verify OTP token
     const decoded = verifyOtpToken(otpToken);
-
-    if (decoded.type !== 'signup' || decoded.email !== email) {
+    if (decoded.type !== "signup" || decoded.email !== email) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid or expired OTP token for signup.'
+        message: "Invalid or expired OTP token for signup.",
       });
     }
 
-    // Check email uniqueness
     const emailCheck = await pool.query(
-      'SELECT user_id FROM users WHERE email = $1',
-      [email]
+      "SELECT user_id FROM users WHERE email = $1", [email]
     );
     if (emailCheck.rows.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'User already registered with this email.'
+        message: "User already registered with this email.",
       });
     }
 
-    // Check phone number uniqueness
     const phoneCheck = await pool.query(
-      'SELECT user_id FROM users WHERE phone_number = $1',
-      [phone_number]
+      "SELECT user_id FROM users WHERE phone_number = $1", [phone_number]
     );
     if (phoneCheck.rows.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Phone number is already in use.'
+        message: "Phone number is already in use.",
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new user (removed dob field as it's not in new schema)
     const userResult = await pool.query(
-      `INSERT INTO users (name, email, password, phone_number, role)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING user_id, name, email, phone_number, role, created_at`,
-      [name, email, hashedPassword, phone_number, role]
+      `INSERT INTO users (name, email, password, phone_number, dob, role)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING user_id, name, email, phone_number, dob, role, created_at`,
+      [name, email, hashedPassword, phone_number, dob, "user"] // ✅ "user" not "citizen"
     );
 
     const newUser = userResult.rows[0];
-
-    // Generate auth token
     const token = generateToken(newUser);
 
     return res.status(201).json({
       success: true,
-      message: 'User created successfully.',
+      message: "User created successfully.",
       token,
       user: newUser,
     });
 
   } catch (err) {
-    console.error('Signup error:', err);
-
-    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    console.error("Signup error:", err);
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,
-        message: 'Invalid or expired OTP token.'
+        message: "Invalid or expired OTP token.",
       });
     }
-
     return res.status(500).json({
       success: false,
-      message: 'Error creating user.',
+      message: "Error creating user.",
       error: err.message,
     });
   }

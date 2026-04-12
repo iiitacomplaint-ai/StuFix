@@ -7,9 +7,8 @@ import { Route, Routes ,useLocation} from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import CitizenDashboard from './pages/CitizenDashboard';
+import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import PoliceDashboard from './pages/PoliceDashboard';
 import HomeRedirect from './components/HomeRedirect';
 import CitizenComplaintPage from './pages/CitizenComplaintPage';
 import InfoPage from './pages/InfoPage';
@@ -42,8 +41,7 @@ const App = () => {
       <Route path='/landingpage' element={<HomePage />} />
       <Route path='/login' element={<LoginPage />} />
       <Route path='/signup' element={<SignupPage />} />
-      <Route path='/userdashboard' element={<CitizenDashboard />} />
-      <Route path='/workerdashboard' element={<PoliceDashboard />} />
+      <Route path='/user/dashboard' element={<UserDashboard />} />
       <Route path='/admindashboard' element={<AdminDashboard />} />
       <Route path='/citizenComplaintPage' element={<CitizenComplaintPage />} />
       <Route path='/infopage' element={<InfoPage />} />
