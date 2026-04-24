@@ -1,208 +1,207 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { 
+  GraduationCap, 
+  LayoutDashboard, 
+  FileText, 
+  CheckCircle, 
+  Clock, 
+  TrendingUp,
+  Shield,
+  Users,
+  Eye,
+  Bell,
+  Mail,
+  Phone,
+  HelpCircle
+} from 'lucide-react';
 
 const InfoSection = () => {
   // Role configuration with styles, icons, and colors
   const roleConfig = {
-    citizen: {
-      name: 'Citizen',
-      icon: '👤',
-      gradient: 'from-blue-600 to-blue-800',
+    user: {
+      name: 'Student',
+      icon: <GraduationCap className="h-8 w-8" />,
+      gradient: 'from-purple-600 to-indigo-600',
+      accent: 'purple',
+      bgPattern: 'bg-gradient-to-br from-purple-50 to-white'
+    },
+    worker: {
+      name: 'Department Worker',
+      icon: <Users className="h-8 w-8" />,
+      gradient: 'from-blue-600 to-cyan-600',
       accent: 'blue',
       bgPattern: 'bg-gradient-to-br from-blue-50 to-white'
     },
-    police: {
-      name: 'Police Officer',
-      icon: '👮‍♂️',
-      gradient: 'from-blue-700 to-indigo-900',
-      accent: 'indigo',
-      bgPattern: 'bg-gradient-to-br from-indigo-50 to-blue-50'
-    },
     admin: {
       name: 'System Administrator',
-      icon: '⚙️',
-      gradient: 'from-blue-800 to-slate-900',
-      accent: 'slate',
-      bgPattern: 'bg-gradient-to-br from-slate-50 to-blue-50'
+      icon: <Shield className="h-8 w-8" />,
+      gradient: 'from-purple-700 to-indigo-800',
+      accent: 'indigo',
+      bgPattern: 'bg-gradient-to-br from-indigo-50 to-white'
     }
   };
 
   // Get user role from Redux state
-  const userRole = useSelector(state => state.user.user.role);
+  const userRole = useSelector(state => state.user.user?.role);
   
-  // Get the current role configuration, default to citizen if role not found
-  const currentRole = roleConfig[userRole] || roleConfig.citizen;
+  // Get the current role configuration, default to student if role not found
+  const currentRole = roleConfig[userRole] || roleConfig.user;
 
   // Role-specific content
   const contentByRole = {
-    citizen: [
+    user: [
       {
-        title: 'System Statistics',
-        icon: '📊',
-        description: 'Real-time insights into our crime reporting system',
-        content: [
-          'Over 15,000+ reports processed monthly with 98% accuracy',
-          '24/7 response system with average 2-hour acknowledgment',
-          '750+ verified police officers across all districts',
-          'Multi-language support available in 8 regional languages',
-          'Advanced AI-powered threat assessment for faster processing',
-          'Mobile app with offline reporting capabilities'
-        ]
-      },
-      {
-        title: 'Filing Your Report',
-        icon: '📝',
+        title: 'Submit a Complaint',
+        icon: <FileText className="h-6 w-6" />,
         description: 'Step-by-step guide to submit your complaint effectively',
         content: [
-          'Access via web portal or mobile app with secure login',
-          'Select appropriate category: Crime, Missing Person, or Tip',
-          'Provide detailed incident description with precise timing',
-          'Upload multiple evidence files (photos, videos, documents)',
-          'Add location using GPS coordinates or manual address',
-          'Choose reporting preference: identified or anonymous',
-          'Receive instant tracking ID and case reference number'
+          'Access the dashboard and click on "Add Complaint" button',
+          'Select appropriate category: Network, Cleaning, Carpentry, PC Maintenance, Plumbing, or Electricity',
+          'Provide a clear title and detailed description of the issue',
+          'Set priority level: Low, Medium, or High based on urgency',
+          'Upload supporting evidence (images, videos, or PDFs - max 3 files, 10MB each)',
+          'Submit and receive instant complaint ID for tracking'
         ]
       },
       {
-        title: 'Anonymous Protection',
-        icon: '🔒',
-        description: 'Your identity is completely protected with our advanced security',
+        title: 'Track Your Complaint',
+        icon: <Eye className="h-6 w-6" />,
+        description: 'Real-time monitoring of your complaint status',
         content: [
-          'Zero-knowledge architecture ensures complete anonymity',
-          'Advanced encryption protects all communications',
-          'No IP logging or digital fingerprinting',
-          'Secure communication channels with end-to-end encryption',
-          'Option to reveal identity later through secure verification',
-          'Legal protection under whistleblower and informant policies'
+          'View all your complaints on the dashboard with current status',
+          'Track progress through stages: Submitted → Assigned → In Progress → Resolved → Closed',
+          'Check worker remarks and resolution details',
+          'Receive notifications when status changes',
+          'View complete status history with timestamps'
         ]
       },
       {
-        title: 'Data Security & Privacy',
-        icon: '🛡️',
-        description: 'Military-grade security protecting your sensitive information',
+        title: 'Complaint Status Guide',
+        icon: <Clock className="h-6 w-6" />,
+        description: 'Understanding different complaint statuses',
         content: [
-          'AES-256 encryption for all data storage and transmission',
-          'Regular third-party security audits and penetration testing',
-          'Compliance with national data protection regulations',
-          'Geographically distributed secure cloud infrastructure',
-          'Multi-factor authentication and biometric access controls',
-          'Automatic data purging based on legal retention policies'
+          'Submitted: Complaint successfully submitted, awaiting admin assignment',
+          'Assigned: Complaint assigned to a department worker',
+          'In Progress: Worker is actively working on your complaint',
+          'Resolved: Issue has been fixed, waiting for your confirmation',
+          'Closed: Complaint successfully resolved and closed',
+          'Escalated: Issue requires higher authority attention',
+          'Withdrawn: Complaint withdrawn by you (only possible before assignment)'
+        ]
+      },
+      {
+        title: 'Tips for Effective Complaints',
+        icon: <HelpCircle className="h-6 w-6" />,
+        description: 'Best practices to get faster resolution',
+        content: [
+          'Be specific about the location (building, room number, floor)',
+          'Provide clear before/after photos when possible',
+          'Set appropriate priority level (High for urgent issues)',
+          'Keep contact details updated for worker communication',
+          'Respond promptly to worker queries',
+          'Provide feedback after resolution to improve service'
         ]
       }
     ],
-    police: [
+    worker: [
       {
-        title: 'Lead Verification Protocol',
-        icon: '🔍',
-        description: 'Comprehensive guidelines for authenticating and processing reports',
+        title: 'View Assigned Complaints',
+        icon: <LayoutDashboard className="h-6 w-6" />,
+        description: 'Managing complaints assigned to your department',
         content: [
-          'Verify evidence authenticity using digital forensics tools',
-          'Cross-reference with national and regional crime databases',
-          'Conduct preliminary investigation within 24-48 hours',
-          'Document all verification steps with timestamps',
-          'Escalate high-priority cases to specialized units immediately',
-          'Maintain strict chain of custody for all digital evidence',
-          'Coordinate with cybercrime unit for technical analysis'
+          'Access dashboard to view all complaints assigned to you',
+          'Filter complaints by status, priority, or category',
+          'Search complaints by student name or title',
+          'View complete complaint details including student information',
+          'Check attached media for better understanding of the issue'
         ]
       },
       {
-        title: 'Legal Compliance',
-        icon: '⚖️',
-        description: 'Essential legal requirements and professional responsibilities',
+        title: 'Update Complaint Status',
+        icon: <CheckCircle className="h-6 w-6" />,
+        description: 'Proper workflow for status updates',
         content: [
-          'Adhere to constitutional rights and procedural laws',
-          'Maintain absolute confidentiality of sensitive information',
-          'Follow evidence collection and preservation protocols',
-          'Respect privacy rights and data protection regulations',
-          'Document all decisions with proper legal justification',
-          'Coordinate with public prosecutor for legal guidance',
-          'Ensure compliance with human rights standards'
+          'Assigned → In Progress: When you start working on the complaint',
+          'In Progress → Resolved: After fixing the issue',
+          'Escalated → In Progress: When taking back escalated complaints',
+          'Always add detailed remarks explaining the action taken',
+          'Update location/room status after resolution'
         ]
       },
       {
-        title: 'Standard Operating Procedures',
-        icon: '📋',
-        description: 'Systematic approach to complaint handling and investigation',
+        title: 'Resolution Guidelines',
+        icon: <TrendingUp className="h-6 w-6" />,
+        description: 'Best practices for complaint resolution',
         content: [
-          'Acknowledge receipt within 2 hours of submission',
-          'Assign priority classification based on severity matrix',
-          'Conduct initial assessment and preliminary documentation',
-          'Coordinate with relevant departments and specialized units',
-          'Provide regular status updates to complainant',
-          'Maintain detailed investigation logs and evidence records',
-          'Submit comprehensive final report upon case resolution'
+          'Acknowledge complaint within 24 hours of assignment',
+          'Contact student if additional information needed',
+          'Document all actions taken in remarks section',
+          'Take before/after photos for documentation',
+          'Aim for resolution within 48 hours of assignment',
+          'Escalate to admin if unable to resolve'
         ]
       },
       {
-        title: 'Missing Person Protocols',
-        icon: '🔍',
-        description: 'Specialized procedures for missing person investigations',
+        title: 'Performance Metrics',
+        icon: <Clock className="h-6 w-6" />,
+        description: 'Track your efficiency and performance',
         content: [
-          'Activate immediate alert system across all stations',
-          'Coordinate with multiple jurisdictions and agencies',
-          'Utilize social media and public broadcasting channels',
-          'Implement 24/7 monitoring and tip line management',
-          'Maintain regular communication with family members',
-          'Coordinate inter-state and international searches when required',
-          'Deploy specialized search and rescue teams as needed'
+          'Monitor your resolution rate and efficiency percentage',
+          'Track average resolution time per complaint',
+          'View total complaints assigned, in-progress, and resolved',
+          'Performance data helps in department evaluation',
+          'Maintain high efficiency for better ratings'
         ]
       }
     ],
     admin: [
       {
-        title: 'System Infrastructure',
-        icon: '🖥️',
-        description: 'Critical system maintenance and performance optimization',
+        title: 'Worker Management',
+        icon: <Users className="h-6 w-6" />,
+        description: 'Complete worker administration',
         content: [
-          'Real-time system health monitoring with AI-powered alerts',
-          'Advanced database optimization and automated cleanup',
-          'Security patches and system updates with zero downtime',
-          'Comprehensive backup and disaster recovery protocols',
-          'Performance monitoring with predictive scaling capabilities',
-          'User access management with role-based permissions',
-          'API management and third-party integration oversight'
+          'Add new workers to the system with department assignment',
+          'View all workers with their performance metrics',
+          'Monitor worker efficiency and complaint resolution rates',
+          'Delete or update worker information as needed',
+          'Auto-generated credentials sent via email to new workers'
         ]
       },
       {
-        title: 'User Administration',
-        icon: '👥',
-        description: 'Comprehensive user lifecycle and access management',
+        title: 'Complaint Assignment',
+        icon: <FileText className="h-6 w-6" />,
+        description: 'Efficient complaint distribution',
         content: [
-          'Multi-step user registration with identity verification',
-          'Granular role-based access control implementation',
-          'Account suspension and reinstatement procedures',
-          'Detailed user activity monitoring and audit trails',
-          'Privacy settings management and data governance',
-          'Advanced support ticket system with priority queues',
-          'User training and onboarding program management'
+          'Review submitted complaints awaiting assignment',
+          'Assign complaints to workers based on department match',
+          'Ensure fair distribution of workload across workers',
+          'Reassign complaints when necessary',
+          'Monitor unassigned complaints and assign promptly'
         ]
       },
       {
-        title: 'Police Officer Management',
-        icon: '👮‍♂️',
-        description: 'Specialized procedures for law enforcement user management',
+        title: 'System Monitoring',
+        icon: <TrendingUp className="h-6 w-6" />,
+        description: 'Complete system oversight',
         content: [
-          'Multi-level identity verification through official channels',
-          'Badge number validation and department authentication',
-          'Comprehensive background check coordination',
-          'Training module completion tracking and certification',
-          'Rank-based access level assignment and management',
-          'Regular re-verification and credential renewal procedures',
-          'Performance metrics tracking and evaluation systems'
+          'View all complaints across all departments',
+          'Filter complaints by status, category, or priority',
+          'Monitor overall resolution rates and response times',
+          'Access audit logs for complete accountability',
+          'Track system performance and user activity'
         ]
       },
       {
-        title: 'System Analytics & Reporting',
-        icon: '📈',
-        description: 'Advanced analytics and comprehensive system oversight',
+        title: 'Audit & Compliance',
+        icon: <Shield className="h-6 w-6" />,
+        description: 'Ensuring system integrity',
         content: [
-          'Generate detailed system performance and usage reports',
-          'Monitor key performance indicators with predictive analytics',
-          'Analyze user engagement patterns and satisfaction metrics',
-          'Coordinate with law enforcement leadership on policy updates',
-          'Implement system-wide policy changes and feature updates',
-          'Ensure regulatory compliance and audit trail maintenance',
-          'Manage data retention policies and privacy compliance'
+          'Review complete audit logs of all system actions',
+          'Track who assigned, updated, or resolved complaints',
+          'Monitor worker performance and accountability',
+          'Ensure compliance with data protection policies',
+          'Generate reports for management review'
         ]
       }
     ]
@@ -217,8 +216,8 @@ const InfoSection = () => {
       
       <div className="relative p-8">
         <div className="flex items-center mb-4">
-          <div className={`flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${currentRole.gradient} shadow-lg mr-4`}>
-            <span className="text-2xl">{icon}</span>
+          <div className={`flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${currentRole.gradient} shadow-lg mr-4 text-white`}>
+            {icon}
           </div>
           <div>
             <h3 className="text-xl font-bold text-gray-900 mb-1">{title}</h3>
@@ -245,8 +244,8 @@ const InfoSection = () => {
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <div className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br ${currentRole.gradient} shadow-2xl mb-6`}>
-            <span className="text-3xl">{currentRole.icon}</span>
+          <div className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br ${currentRole.gradient} shadow-2xl mb-6 text-white`}>
+            {currentRole.icon}
           </div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-4">
@@ -265,7 +264,7 @@ const InfoSection = () => {
         {/* Role Badge */}
         <div className="flex justify-center mb-12">
           <div className={`inline-flex items-center px-8 py-4 rounded-full bg-gradient-to-r ${currentRole.gradient} text-white font-semibold shadow-2xl transform hover:scale-105 transition-transform duration-300`}>
-            <span className="mr-3 text-2xl">{currentRole.icon}</span>
+            <span className="mr-3">{currentRole.icon}</span>
             <span className="text-lg">Active Role: {currentRole.name}</span>
           </div>
         </div>
@@ -286,8 +285,8 @@ const InfoSection = () => {
 
         {/* Support Section */}
         <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-12 text-center">
-          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${currentRole.gradient} shadow-lg mb-6`}>
-            <span className="text-2xl">🆘</span>
+          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${currentRole.gradient} shadow-lg mb-6 text-white`}>
+            <HelpCircle className="h-8 w-8" />
           </div>
           
           <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
@@ -295,27 +294,26 @@ const InfoSection = () => {
           </h3>
           
           <p className="text-gray-600 mb-8 max-w-2xl mx-auto text-lg">
-            Our dedicated support team is available 24/7 to help you with any questions or technical issues.
+            Our dedicated support team is available to help you with any questions or technical issues.
           </p>
           
-         <div className="flex flex-col sm:flex-row justify-center gap-4">
-  <button
-    onClick={() => window.location.href = 'tel:100'}
-    className={`flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r ${currentRole.gradient} text-white font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300`}
-  >
-    <span className="mr-2">📞</span>
-    Call Police: 100
-  </button>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <button
+              onClick={() => window.location.href = 'mailto:support@iiita.ac.in'}
+              className={`flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r ${currentRole.gradient} text-white font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300`}
+            >
+              <Mail className="h-5 w-5 mr-2" />
+              Email Support
+            </button>
 
-  <button
-    onClick={() => window.location.href = 'mailto:nyaysetu.foru@gmail.com'}
-    className="flex items-center justify-center px-6 py-3 rounded-xl bg-white border-2 border-blue-200 text-blue-700 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 hover:bg-blue-50"
-  >
-    <span className="mr-2">📧</span>
-    Email: nyaysetu.foru@gmail.com
-  </button>
-</div>
-
+            <button
+              onClick={() => window.location.href = '/contact'}
+              className="flex items-center justify-center px-6 py-3 rounded-xl bg-white border-2 border-purple-200 text-purple-700 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 hover:bg-purple-50"
+            >
+              <Phone className="h-5 w-5 mr-2" />
+              Contact Admin
+            </button>
+          </div>
         </div>
       </div>
     </div>

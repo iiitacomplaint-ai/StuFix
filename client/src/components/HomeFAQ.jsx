@@ -10,42 +10,45 @@
  */
 
 import React, { useState } from 'react';
-import { ChevronDown, HelpCircle } from 'lucide-react';
+import { ChevronDown, HelpCircle, MessageCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const FaqItem = ({ question, answer }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const FaqItem = ({ question, answer, isOpen, onToggle }) => {
     return (
         <div className="border-b border-gray-200 py-5 last:border-b-0">
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={onToggle}
                 className="w-full flex justify-between items-center text-left text-base md:text-lg font-semibold text-gray-800 hover:text-purple-600 transition-colors duration-200"
                 aria-expanded={isOpen}
             >
                 <span className="pr-4">{question}</span>
                 <ChevronDown className={`flex-shrink-0 transform transition-transform duration-300 ${isOpen ? 'rotate-180 text-purple-600' : ''}`} />
             </button>
-            <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] mt-3' : 'grid-rows-[0fr]'}`}>
-                <div className="overflow-hidden">
+            {isOpen && (
+                <div className="mt-3">
                     <p className="text-gray-600 leading-relaxed">{answer}</p>
                 </div>
-            </div>
+            )}
         </div>
     );
 };
 
 export default function HomeFAQ() {
+    const navigate = useNavigate();
+    const [openIndex, setOpenIndex] = useState(null);
+
     const faqData = [
         {
             q: "What is the College Complaint Management System?",
-            a: "The College Complaint Management System is a digital platform that allows students and staff to report issues related to college facilities including network problems, cleaning, carpentry, PC maintenance, plumbing, and electricity. It streamlines the complaint resolution process by automatically routing issues to the appropriate department."
+            a: "The College Complaint Management System is a digital platform that allows students and staff to report issues related to college facilities including network problems, cleaning, carpentry, PC maintenance, plumbing, and electricity. It streamlines the complaint resolution process by automatically routing issues to the appropriate department at IIIT Allahabad."
         },
         {
             q: "How do I submit a complaint?",
-            a: "Simply create an account or log in, then click on 'Submit Complaint'. Fill in the details including title, description, category, and priority. You can also upload images or videos as evidence. Your complaint will be assigned to the relevant department worker."
+            a: "Simply create an account or log in, then click on 'Submit Complaint'. Fill in the details including title, description, category, and priority. You can also upload images or videos as evidence. Your complaint will be assigned to the relevant department worker for quick resolution."
         },
         {
             q: "Can I track the status of my complaint?",
-            a: "Yes! Once logged in, you can view all your complaints on your dashboard. Each complaint shows its current status (Submitted, Assigned, In Progress, Resolved, Closed, or Escalated) and you can see the complete history of status changes."
+            a: "Yes! Once logged in, you can view all your complaints on your dashboard. Each complaint shows its current status (Submitted, Assigned, In Progress, Resolved, Closed, Escalated, or Withdrawn) and you can see the complete history of status changes with timestamps."
         },
         {
             q: "What types of complaints can I file?",
@@ -53,29 +56,33 @@ export default function HomeFAQ() {
         },
         {
             q: "How are complaints assigned to workers?",
-            a: "An admin reviews submitted complaints and assigns them to workers based on their department. For example, network issues go to Network department workers, plumbing issues to Plumbing workers, ensuring quick and efficient resolution."
+            a: "An admin reviews submitted complaints and assigns them to workers based on their department. For example, network issues go to Network department workers, plumbing issues to Plumbing workers, ensuring quick and efficient resolution by the right specialist."
         },
         {
             q: "Can I cancel a complaint after submitting?",
-            a: "Yes, you can cancel a complaint only if its status is 'Submitted' (before it's assigned to a worker). Once assigned, you cannot cancel it, but you can track its progress until resolution."
+            a: "Yes, you can withdraw a complaint if its status is 'Submitted' or 'Assigned' (before work begins). Simply click the 'Withdraw' button and provide a reason. Once withdrawn, you can also reopen it later if needed."
         },
         {
             q: "How will I know when my complaint is resolved?",
-            a: "You will receive updates through the platform. The status will change to 'Resolved' when the worker has fixed the issue. You can also view worker remarks and see the complete timeline of your complaint."
+            a: "You will receive real-time updates through the platform. The status will change to 'Resolved' when the worker has fixed the issue. You can also view worker remarks, add comments, and see the complete timeline of your complaint from submission to resolution."
         },
         {
             q: "What happens if my complaint is not resolved satisfactorily?",
-            a: "If you're not satisfied with the resolution, you can reopen a resolved complaint. It will be sent back to 'In Progress' status for further attention. For escalated issues, admins can also escalate complaints to higher authorities."
+            a: "If you're not satisfied with the resolution, you can reopen a resolved complaint. It will be sent back to 'In Progress' status for further attention. For critical issues, admins can also escalate complaints to higher authorities for priority handling."
         },
         {
             q: "Is my personal information secure?",
-            a: "Absolutely. Your personal details are protected and only visible to authorized admins and workers assigned to your complaint. We follow strict data protection protocols to ensure your privacy."
+            a: "Absolutely. Your personal details are protected and only visible to authorized admins and workers assigned to your complaint. We follow strict data protection protocols and industry-standard encryption to ensure your privacy and security."
         },
         {
             q: "Can I upload evidence with my complaint?",
-            a: "Yes, you can upload images, videos, or documents as evidence when submitting a complaint. This helps workers better understand the issue and resolve it faster. You can upload up to 5 files per complaint."
+            a: "Yes, you can upload images, videos, or PDF documents as evidence when submitting a complaint. This helps workers better understand the issue and resolve it faster. You can upload up to 3 files per complaint, each up to 10MB."
         }
     ];
+
+    const toggleFaq = (index) => {
+        setOpenIndex(openIndex === index ? null : index);
+    };
 
     return (
         <section id="faq" className="py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">
@@ -89,26 +96,45 @@ export default function HomeFAQ() {
                         Frequently Asked Questions
                     </h2>
                     <p className="text-lg text-gray-600 mt-3 max-w-2xl mx-auto">
-                        Everything you need to know about submitting and tracking complaints
+                        Everything you need to know about submitting and tracking complaints at IIIT Allahabad
                     </p>
                 </div>
+                
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 md:p-8">
                     {faqData.map((item, index) => (
-                        <FaqItem key={index} question={item.q} answer={item.a} />
+                        <FaqItem 
+                            key={index} 
+                            question={item.q} 
+                            answer={item.a} 
+                            isOpen={openIndex === index}
+                            onToggle={() => toggleFaq(index)}
+                        />
                     ))}
                 </div>
                 
                 {/* Still Have Questions Section */}
-                <div className="mt-10 text-center">
-                    <p className="text-gray-600">
-                        Still have questions?{" "}
+                <div className="mt-10 text-center bg-purple-50 rounded-xl p-6">
+                    <MessageCircle className="h-8 w-8 text-purple-600 mx-auto mb-3" />
+                    <p className="text-gray-700 font-medium">
+                        Still have questions?
+                    </p>
+                    <p className="text-gray-600 text-sm mt-1 mb-4">
+                        Our support team is here to help you
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
                         <button 
-                            onClick={() => window.location.href = '/contact'}
-                            className="text-purple-600 font-semibold hover:text-purple-700 underline transition"
+                            onClick={() => navigate('/contact')}
+                            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                         >
                             Contact Support
                         </button>
-                    </p>
+                        <button 
+                            onClick={() => navigate('/login')}
+                            className="px-6 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+                        >
+                            Submit a Complaint
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>

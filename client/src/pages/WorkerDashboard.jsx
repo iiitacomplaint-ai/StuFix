@@ -28,7 +28,7 @@ import {
   updateComplaintStatus,
 } from '../apicalls/workerapi';
 import UserProfileCard from '../components/UserProfileCard';
-import LoadingPage from '../components/LoadingPage';
+import ScrollLoading from '../components/ScrollLoading';
 import ErrorPage from '../components/ErrorPage';
 import useLogoutUser from '../utils/useLogoutUser';
 
@@ -50,34 +50,34 @@ const WorkerDashboard = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch assigned complaints - with aggressive caching and refetch on mount
+  // Fetch assigned complaints
   const complaintsQuery = useQuery({
     queryKey: ['assigned-complaints', user?.user_id, filters],
     queryFn: () => getAssignedComplaints(filters),
     enabled: !!user?.user_id,
-    staleTime: 0, // Always stale, will refetch on mount
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnReconnect: true, // Refetch when reconnecting
-    refetchInterval: 60 * 1000, // Refetch every 1 minute
-    refetchIntervalInBackground: true, // Refetch even in background
+    staleTime: 0,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: true,
     retry: 2,
     retryDelay: 1000,
   });
 
-  // Fetch dashboard stats - with aggressive caching and refetch on mount
+  // Fetch dashboard stats
   const statsQuery = useQuery({
     queryKey: ['worker-stats', user?.user_id],
     queryFn: () => getWorkerDashboardStats(),
     enabled: !!user?.user_id,
-    staleTime: 0, // Always stale, will refetch on mount
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnReconnect: true, // Refetch when reconnecting
-    refetchInterval: 60 * 1000, // Refetch every 1 minute
-    refetchIntervalInBackground: true, // Refetch even in background
+    staleTime: 0,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: true,
     retry: 2,
     retryDelay: 1000,
   });
@@ -87,15 +87,12 @@ const WorkerDashboard = () => {
     mutationFn: ({ complaint_id, new_status }) => updateComplaintStatus(complaint_id, new_status),
     
     onMutate: async ({ complaint_id, new_status }) => {
-      // Cancel ongoing queries
       await queryClient.cancelQueries({ queryKey: ['assigned-complaints', user?.user_id, filters] });
       await queryClient.cancelQueries({ queryKey: ['worker-stats', user?.user_id] });
       
-      // Get current data
       const previousComplaints = queryClient.getQueryData(['assigned-complaints', user?.user_id, filters]);
       const previousStats = queryClient.getQueryData(['worker-stats', user?.user_id]);
       
-      // Optimistically update complaints
       if (previousComplaints?.complaints) {
         const updatedComplaints = previousComplaints.complaints.map(complaint =>
           complaint.complaint_id === complaint_id
@@ -109,12 +106,10 @@ const WorkerDashboard = () => {
         });
       }
       
-      // Optimistically update stats
       if (previousStats?.statistics) {
         const oldStatus = previousComplaints?.complaints?.find(c => c.complaint_id === complaint_id)?.status;
         const updatedStats = { ...previousStats.statistics };
         
-        // Update counts based on status change
         if (oldStatus === 'Assigned' && new_status === 'In Progress') {
           updatedStats.pending_assignment = Math.max(0, (updatedStats.pending_assignment || 0) - 1);
           updatedStats.in_progress = (updatedStats.in_progress || 0) + 1;
@@ -132,18 +127,15 @@ const WorkerDashboard = () => {
         });
       }
       
-      toast.info("Updating status...");
       return { previousComplaints, previousStats };
     },
     
     onSuccess: (result, variables, context) => {
       if (result.success) {
         toast.success(result.message || 'Status updated successfully!');
-        // Force refetch to ensure consistency
         complaintsQuery.refetch();
         statsQuery.refetch();
       } else {
-        // Rollback on failure
         if (context?.previousComplaints) {
           queryClient.setQueryData(['assigned-complaints', user?.user_id, filters], context.previousComplaints);
         }
@@ -158,7 +150,6 @@ const WorkerDashboard = () => {
     },
     
     onError: (error, variables, context) => {
-      // Rollback on error
       if (context?.previousComplaints) {
         queryClient.setQueryData(['assigned-complaints', user?.user_id, filters], context.previousComplaints);
       }
@@ -187,12 +178,11 @@ const WorkerDashboard = () => {
     complaint.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Manual refresh function
-  const handleRefresh = () => {
-    complaintsQuery.refetch();
-    statsQuery.refetch();
-    toast.info("Refreshing data...");
-  };
+  // Check loading states
+  const isLoading = (complaintsQuery.isLoading && complaints.length === 0) || 
+                    (statsQuery.isLoading && stats.total_assigned === 0);
+  
+  const isMutating = updateStatusMutation.isPending;
 
   const getStatusBadgeColor = (status) => {
     const colors = {
@@ -252,11 +242,14 @@ const WorkerDashboard = () => {
     return Math.round((resolved / total) * 100);
   };
 
-  const isLoading = complaintsQuery.isLoading && complaints.length === 0;
-  const isFetching = complaintsQuery.isFetching && complaints.length > 0;
-
+  // Show ScrollLoading during initial load
   if (isLoading) {
-    return <LoadingPage status="load" message="Loading your dashboard..." />;
+    return <ScrollLoading message="Loading your dashboard..." />;
+  }
+
+  // Show ScrollLoading during mutation
+  if (isMutating) {
+    return <ScrollLoading message="Updating complaint status..." />;
   }
 
   if (complaintsQuery.isError && complaints.length === 0) {
@@ -312,11 +305,12 @@ const WorkerDashboard = () => {
                     <button
                       key={option.value}
                       onClick={() => setSelectedStatus(option.value)}
+                      disabled={updateStatusMutation.isPending}
                       className={`w-full flex items-center justify-center gap-2 p-3 border rounded-lg transition-all ${
                         selectedStatus === option.value
                           ? 'border-purple-500 bg-purple-50 text-purple-700'
                           : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
-                      }`}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {option.icon}
                       <span>{option.label}</span>
@@ -367,6 +361,7 @@ const WorkerDashboard = () => {
           getStatusBadgeColor={getStatusBadgeColor}
           getPriorityBadge={getPriorityBadge}
           canUpdateStatus={getNextStatusOptions(selectedComplaint.status).length > 0}
+          isMutating={updateStatusMutation.isPending}
         />
       )}
 
@@ -383,7 +378,11 @@ const WorkerDashboard = () => {
           <div className="flex items-center gap-3">
             {/* Refresh Button */}
             <button
-              onClick={handleRefresh}
+              onClick={() => {
+                complaintsQuery.refetch();
+                statsQuery.refetch();
+                toast.info("Refreshing data...");
+              }}
               disabled={complaintsQuery.isFetching || statsQuery.isFetching}
               className="p-2 text-gray-500 hover:text-purple-600 transition-colors disabled:opacity-50"
               title="Refresh data"
@@ -563,7 +562,7 @@ const WorkerDashboard = () => {
             <h3 className="text-lg font-semibold text-gray-800">Assigned Complaints</h3>
             <span className="text-sm text-gray-500">
               Total: {filteredComplaints.length} complaints
-              {isFetching && <RefreshCw className="h-3 w-3 animate-spin inline ml-2" />}
+              {complaintsQuery.isFetching && <RefreshCw className="h-3 w-3 animate-spin inline ml-2" />}
             </span>
           </div>
 
@@ -583,6 +582,7 @@ const WorkerDashboard = () => {
                   getStatusBadgeColor={getStatusBadgeColor}
                   getPriorityBadge={getPriorityBadge}
                   canUpdateStatus={getNextStatusOptions(complaint.status).length > 0}
+                  isMutating={updateStatusMutation.isPending}
                 />
               ))}
             </div>
@@ -609,7 +609,7 @@ const StatCard = ({ label, value, color, icon }) => (
 );
 
 // Complaint Card Component
-const ComplaintCard = ({ complaint, onViewDetails, onUpdateStatus, getStatusBadgeColor, getPriorityBadge, canUpdateStatus }) => (
+const ComplaintCard = ({ complaint, onViewDetails, onUpdateStatus, getStatusBadgeColor, getPriorityBadge, canUpdateStatus, isMutating }) => (
   <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all">
     <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-3">
       <div className="flex-1">
@@ -634,7 +634,8 @@ const ComplaintCard = ({ complaint, onViewDetails, onUpdateStatus, getStatusBadg
         {canUpdateStatus && (
           <button
             onClick={onUpdateStatus}
-            className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-1"
+            disabled={isMutating}
+            className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
           >
             <RefreshCw className="h-4 w-4" />
             Update Status
@@ -653,7 +654,7 @@ const ComplaintCard = ({ complaint, onViewDetails, onUpdateStatus, getStatusBadg
 );
 
 // Complaint Details Modal Component
-const ComplaintDetailsModal = ({ complaint, onClose, onStatusUpdate, getStatusBadgeColor, getPriorityBadge, canUpdateStatus }) => {
+const ComplaintDetailsModal = ({ complaint, onClose, onStatusUpdate, getStatusBadgeColor, getPriorityBadge, canUpdateStatus, isMutating }) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
 
   return (
@@ -748,7 +749,8 @@ const ComplaintDetailsModal = ({ complaint, onClose, onStatusUpdate, getStatusBa
           {canUpdateStatus && (
             <button
               onClick={onStatusUpdate}
-              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+              disabled={isMutating}
+              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <RefreshCw className="h-4 w-4" />
               Update Status

@@ -34,7 +34,7 @@ import {
   getAuditLogs,
   createWorker
 } from '../apicalls/adminapi';
-import LoadingPage from '../components/LoadingPage';
+import ScrollLoading from '../components/ScrollLoading';
 import ErrorPage from '../components/ErrorPage';
 import { resetUser } from '../slices/userSlice';
 import useLogoutUser from '../utils/useLogoutUser';
@@ -56,17 +56,17 @@ const AdminDashboard = () => {
     priority: ''
   });
 
-  // Fetch workers - with aggressive caching and refetch on mount
+  // Fetch workers
   const workersQuery = useQuery({
     queryKey: ['admin-workers'],
     queryFn: () => getWorkers({}),
-    staleTime: 0, // Always stale, will refetch on mount
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnReconnect: true, // Refetch when reconnecting
-    refetchInterval: 60 * 1000, // Refetch every 1 minute
-    refetchIntervalInBackground: true, // Refetch even in background
+    staleTime: 0,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: true,
     retry: 2,
     retryDelay: 1000,
     onError: (error) => {
@@ -74,17 +74,17 @@ const AdminDashboard = () => {
     }
   });
 
-  // Fetch complaints - with aggressive caching and refetch on mount
+  // Fetch complaints
   const complaintsQuery = useQuery({
     queryKey: ['admin-complaints', filters],
     queryFn: () => getAllComplaints(filters),
-    staleTime: 0, // Always stale, will refetch on mount
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnReconnect: true, // Refetch when reconnecting
-    refetchInterval: 60 * 1000, // Refetch every 1 minute
-    refetchIntervalInBackground: true, // Refetch even in background
+    staleTime: 0,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: true,
     retry: 2,
     retryDelay: 1000,
     onError: (error) => {
@@ -92,17 +92,17 @@ const AdminDashboard = () => {
     }
   });
 
-  // Fetch audit logs - with aggressive caching and refetch on mount
+  // Fetch audit logs
   const logsQuery = useQuery({
     queryKey: ['admin-logs'],
     queryFn: () => getAuditLogs({}),
-    staleTime: 0, // Always stale, will refetch on mount
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnReconnect: true, // Refetch when reconnecting
-    refetchInterval: 60 * 1000, // Refetch every 1 minute
-    refetchIntervalInBackground: true, // Refetch even in background
+    staleTime: 0,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: true,
     retry: 2,
     retryDelay: 1000,
     onError: (error) => {
@@ -110,7 +110,7 @@ const AdminDashboard = () => {
     }
   });
 
-  // Create worker mutation with optimistic update
+  // Create worker mutation
   const createWorkerMutation = useMutation({
     mutationFn: createWorker,
     
@@ -141,8 +141,6 @@ const AdminDashboard = () => {
         });
       }
       
-      toast.info("Adding worker...");
-      
       return { previousWorkers };
     },
     
@@ -159,7 +157,6 @@ const AdminDashboard = () => {
           });
         }
         toast.success('Worker created successfully! Credentials sent to email.');
-        // Force refetch to ensure consistency
         workersQuery.refetch();
       } else {
         if (context?.previousWorkers) {
@@ -179,7 +176,7 @@ const AdminDashboard = () => {
     },
   });
 
-  // Assign complaint mutation with optimistic update
+  // Assign complaint mutation
   const assignComplaintMutation = useMutation({
     mutationFn: ({ complaint_id, worker_id }) => assignComplaint(complaint_id, worker_id),
     
@@ -208,15 +205,12 @@ const AdminDashboard = () => {
         });
       }
       
-      toast.info("Assigning complaint...");
-      
       return { previousComplaints };
     },
     
     onSuccess: (result, variables, context) => {
       if (result.success) {
         toast.success('Complaint assigned successfully!');
-        // Force refetch to ensure consistency
         complaintsQuery.refetch();
       } else {
         if (context?.previousComplaints) {
@@ -238,9 +232,13 @@ const AdminDashboard = () => {
   const complaints = complaintsQuery.data?.complaints || [];
   const logs = logsQuery.data?.logs || [];
 
+  // Check loading states
   const isLoadingWorkers = workersQuery.isLoading && workers.length === 0;
   const isLoadingComplaints = complaintsQuery.isLoading && complaints.length === 0;
   const isLoadingLogs = logsQuery.isLoading && logs.length === 0;
+  
+  const isMutating = createWorkerMutation.isPending || assignComplaintMutation.isPending;
+
   const isRefetchingWorkers = workersQuery.isFetching && workers.length > 0;
   const isRefetchingComplaints = complaintsQuery.isFetching && complaints.length > 0;
   const isRefetchingLogs = logsQuery.isFetching && logs.length > 0;
@@ -286,7 +284,6 @@ const AdminDashboard = () => {
     setShowComplaintModal(true);
   };
 
-  // Manual refresh function
   const handleRefresh = () => {
     workersQuery.refetch();
     complaintsQuery.refetch();
@@ -294,7 +291,6 @@ const AdminDashboard = () => {
     toast.info("Refreshing data...");
   };
 
-  // Get user initials for avatar
   const getUserInitials = () => {
     if (!user?.name) return 'A';
     return user.name
@@ -305,7 +301,6 @@ const AdminDashboard = () => {
       .slice(0, 2);
   };
 
-  // Get gradient color based on user name
   const getAvatarGradient = () => {
     const gradients = [
       'from-purple-500 to-indigo-600',
@@ -324,16 +319,23 @@ const AdminDashboard = () => {
     logout();
   };
 
-  if (activeTab === 'workers' && isLoadingWorkers) {
-    return <LoadingPage status="load" message="Loading workers data..." />;
+  // Show ScrollLoading during initial load
+  if ((activeTab === 'workers' && isLoadingWorkers) ||
+      (activeTab === 'complaints' && isLoadingComplaints) ||
+      (activeTab === 'logs' && isLoadingLogs)) {
+    let message = "Loading...";
+    if (activeTab === 'workers') message = "Loading workers data...";
+    if (activeTab === 'complaints') message = "Loading complaints data...";
+    if (activeTab === 'logs') message = "Loading audit logs...";
+    return <ScrollLoading message={message} />;
   }
 
-  if (activeTab === 'complaints' && isLoadingComplaints) {
-    return <LoadingPage status="load" message="Loading complaints data..." />;
-  }
-
-  if (activeTab === 'logs' && isLoadingLogs) {
-    return <LoadingPage status="load" message="Loading audit logs..." />;
+  // Show ScrollLoading during mutations
+  if (isMutating) {
+    let message = "Processing...";
+    if (createWorkerMutation.isPending) message = "Creating new worker...";
+    if (assignComplaintMutation.isPending) message = "Assigning complaint...";
+    return <ScrollLoading message={message} />;
   }
 
   if (hasError) {
@@ -343,7 +345,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8 pt-20">
       <div className="max-w-7xl mx-auto">
-        {/* Header with Admin Profile Icon */}
+        {/* Header */}
         <div className="mb-6 flex justify-between items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
@@ -379,7 +381,6 @@ const AdminDashboard = () => {
                 <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Dropdown Menu */}
               {showUserMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
@@ -466,12 +467,11 @@ const AdminDashboard = () => {
         <div className="flex gap-4 mb-6 border-b">
           <button
             onClick={() => setActiveTab('workers')}
-            disabled={workersQuery.isLoading}
             className={`px-6 py-3 font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'workers'
                 ? 'text-purple-600 border-b-2 border-purple-600'
                 : 'text-gray-500 hover:text-gray-700'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            }`}
           >
             <Users className="h-5 w-5" />
             Workers Management
@@ -481,12 +481,11 @@ const AdminDashboard = () => {
           </button>
           <button
             onClick={() => setActiveTab('complaints')}
-            disabled={complaintsQuery.isLoading}
             className={`px-6 py-3 font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'complaints'
                 ? 'text-purple-600 border-b-2 border-purple-600'
                 : 'text-gray-500 hover:text-gray-700'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            }`}
           >
             <FileText className="h-5 w-5" />
             Complaints Management
@@ -496,12 +495,11 @@ const AdminDashboard = () => {
           </button>
           <button
             onClick={() => setActiveTab('logs')}
-            disabled={logsQuery.isLoading}
             className={`px-6 py-3 font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'logs'
                 ? 'text-purple-600 border-b-2 border-purple-600'
                 : 'text-gray-500 hover:text-gray-700'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            }`}
           >
             <Logs className="h-5 w-5" />
             Audit Logs
@@ -519,13 +517,9 @@ const AdminDashboard = () => {
               <button
                 onClick={() => setShowAddWorker(true)}
                 disabled={createWorkerMutation.isPending}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2 disabled:opacity-50"
               >
-                {createWorkerMutation.isPending ? (
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                ) : (
-                  <UserPlus className="h-5 w-5" />
-                )}
+                <UserPlus className="h-5 w-5" />
                 Add New Worker
               </button>
             </div>
@@ -832,7 +826,7 @@ const UnassignedComplaintCard = ({ complaint, workers, onAssign, isAssigning }) 
           <button
             onClick={handleAssign}
             disabled={!selectedWorkerId || isAssigning}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 text-sm flex items-center gap-2"
           >
             {isAssigning ? (
               <>

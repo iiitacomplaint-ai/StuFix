@@ -4,6 +4,7 @@
  * UPDATED: Changed feature descriptions for complaint management
  * UPDATED: Updated color scheme to purple/indigo theme
  * UPDATED: Added complaint-specific features
+ * UPDATED: Fixed styling and removed styled-jsx
  * 
  * @description Features section for the landing page showcasing complaint system capabilities
  * @version 2.0.0 (Complete rewrite for complaint management)
@@ -19,10 +20,11 @@ import {
     ShieldCheck,
     Wrench,
     Plug,
-    Droplet,
+    Droplets,
     Trash2,
     Cpu,
-    PaintRoller
+    Brush,
+    GraduationCap
 } from 'lucide-react';
 
 const FeatureCard = ({ icon, title, description, color = "purple" }) => {
@@ -32,7 +34,8 @@ const FeatureCard = ({ icon, title, description, color = "purple" }) => {
         green: "bg-green-100 text-green-600",
         orange: "bg-orange-100 text-orange-600",
         red: "bg-red-100 text-red-600",
-        teal: "bg-teal-100 text-teal-600"
+        teal: "bg-teal-100 text-teal-600",
+        cyan: "bg-cyan-100 text-cyan-600"
     };
     
     return (
@@ -51,7 +54,7 @@ export default function HomeFeature() {
         { 
             icon: <ClipboardList size={32} />, 
             title: "Easy Complaint Filing", 
-            description: "Submit complaints quickly with an intuitive form. Add title, description, category, priority, and upload evidence images or videos.",
+            description: "Submit complaints quickly with an intuitive form. Add title, description, category, priority, and upload evidence images, videos, or PDFs.",
             color: "purple"
         },
         { 
@@ -63,19 +66,19 @@ export default function HomeFeature() {
         { 
             icon: <Eye size={32} />, 
             title: "Real-Time Tracking", 
-            description: "Track your complaint status at every stage - from submission to assignment, progress, resolution, and closure.",
+            description: "Track your complaint status at every stage - from submission to assignment, progress, resolution, and closure with complete history.",
             color: "green"
         },
         { 
             icon: <BarChart size={32} />, 
             title: "Admin Analytics Dashboard", 
-            description: "Comprehensive analytics for admins to monitor complaint trends, department performance, and resolution times.",
+            description: "Comprehensive analytics for admins to monitor complaint trends, department performance, worker efficiency, and resolution times.",
             color: "orange"
         },
         { 
             icon: <Bell size={32} />, 
             title: "Status Notifications", 
-            description: "Receive real-time updates when your complaint status changes or when workers add remarks about the resolution.",
+            description: "Receive real-time updates when your complaint status changes, when workers add remarks, or when resolution is completed.",
             color: "red"
         },
         { 
@@ -88,28 +91,28 @@ export default function HomeFeature() {
 
     // Department icons for additional visual appeal
     const departments = [
-        { name: "Network", icon: <Plug size={20} />, color: "blue" },
-        { name: "Cleaning", icon: <Trash2 size={20} />, color: "green" },
-        { name: "Carpentry", icon: <Wrench size={20} />, color: "orange" },
-        { name: "PC Maintenance", icon: <Cpu size={20} />, color: "purple" },
-        { name: "Plumbing", icon: <Droplet size={20} />, color: "cyan" },
-        { name: "Electricity", icon: <PaintRoller size={20} />, color: "red" }
+        { name: "Network", icon: <Plug size={20} />, color: "blue", bgColor: "bg-blue-50", textColor: "text-blue-700", borderColor: "border-blue-200" },
+        { name: "Cleaning", icon: <Trash2 size={20} />, color: "green", bgColor: "bg-green-50", textColor: "text-green-700", borderColor: "border-green-200" },
+        { name: "Carpentry", icon: <Wrench size={20} />, color: "orange", bgColor: "bg-orange-50", textColor: "text-orange-700", borderColor: "border-orange-200" },
+        { name: "PC Maintenance", icon: <Cpu size={20} />, color: "purple", bgColor: "bg-purple-50", textColor: "text-purple-700", borderColor: "border-purple-200" },
+        { name: "Plumbing", icon: <Droplets size={20} />, color: "cyan", bgColor: "bg-cyan-50", textColor: "text-cyan-700", borderColor: "border-cyan-200" },
+        { name: "Electricity", icon: <Brush size={20} />, color: "red", bgColor: "bg-red-50", textColor: "text-red-700", borderColor: "border-red-200" }
     ];
 
     return (
-        <section id="features" className="py-16 md:py-20 relative font-sans bg-gradient-to-b from-gray-50 to-white overflow-hidden">
-            {/* Background decorative elements */}
+        <section id="features" className="py-16 md:py-20 relative bg-gradient-to-b from-gray-50 to-white overflow-hidden">
+            {/* Background decorative elements with inline styles for animations */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute -top-24 -left-24 w-72 h-72 bg-purple-200 rounded-full opacity-30 mix-blend-multiply filter blur-xl animate-blob"></div>
-                <div className="absolute -bottom-24 -right-12 w-96 h-96 bg-indigo-200 rounded-full opacity-30 mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-                <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-purple-100 rounded-full opacity-20 mix-blend-multiply filter blur-2xl animate-blob animation-delay-4000 -translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute -top-24 -left-24 w-72 h-72 bg-purple-200 rounded-full opacity-30 mix-blend-multiply filter blur-xl" style={{ animation: 'blob 7s infinite' }}></div>
+                <div className="absolute -bottom-24 -right-12 w-96 h-96 bg-indigo-200 rounded-full opacity-30 mix-blend-multiply filter blur-xl" style={{ animation: 'blob 7s infinite', animationDelay: '2s' }}></div>
+                <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-purple-100 rounded-full opacity-20 mix-blend-multiply filter blur-2xl -translate-x-1/2 -translate-y-1/2" style={{ animation: 'blob 7s infinite', animationDelay: '4s' }}></div>
             </div>
 
             <div className="relative z-10 container mx-auto px-6">
                 <div className="text-center mb-12">
                     <div className="inline-flex items-center gap-2 bg-purple-100 rounded-full px-4 py-2 mb-4">
-                        <ClipboardList className="h-5 w-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Platform Features</span>
+                        <GraduationCap className="h-5 w-5 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-700">IIIT Allahabad</span>
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
                         Smart Complaint Management System
@@ -124,7 +127,7 @@ export default function HomeFeature() {
                     {departments.map((dept, idx) => (
                         <div
                             key={idx}
-                            className={`inline-flex items-center gap-2 px-4 py-2 bg-${dept.color}-50 text-${dept.color}-700 rounded-full text-sm font-medium border border-${dept.color}-200`}
+                            className={`inline-flex items-center gap-2 px-4 py-2 ${dept.bgColor} ${dept.textColor} rounded-full text-sm font-medium border ${dept.borderColor}`}
                         >
                             {dept.icon}
                             {dept.name}
@@ -144,24 +147,18 @@ export default function HomeFeature() {
                     <p className="text-gray-500 text-sm">
                         ⚡ Quick resolution • 📊 Track progress • 🔔 Real-time updates • 🔒 Secure platform
                     </p>
+                    <p className="text-gray-400 text-xs mt-2">
+                        Available 24/7 • Dedicated department teams • Complete transparency
+                    </p>
                 </div>
             </div>
 
-            {/* CSS for animations */}
-            <style jsx>{`
+            {/* Add keyframe animations to global styles - add this to your index.css or App.css */}
+            <style>{`
                 @keyframes blob {
                     0%, 100% { transform: translate(0px, 0px) scale(1); }
                     33% { transform: translate(30px, -50px) scale(1.1); }
                     66% { transform: translate(-20px, 20px) scale(0.9); }
-                }
-                .animate-blob {
-                    animation: blob 7s infinite;
-                }
-                .animation-delay-2000 {
-                    animation-delay: 2s;
-                }
-                .animation-delay-4000 {
-                    animation-delay: 4s;
                 }
             `}</style>
         </section>

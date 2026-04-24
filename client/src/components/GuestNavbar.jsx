@@ -1,19 +1,19 @@
 /**
  * GuestNavbar Component
- * UPDATED: Converted from Nyay Setu (crime reporting) to College Complaint Management System
- * UPDATED: Changed logo from Shield to Building/Library icon
- * UPDATED: Updated brand name to "College Complaint System"
+ * UPDATED: Converted from College Complaint System to StuFix
+ * UPDATED: Changed logo to StuFix logo
+ * UPDATED: Updated brand name to "StuFix"
  * UPDATED: Changed color scheme to purple/indigo theme
  * UPDATED: Updated navigation paths for complaint system
  * UPDATED: Improved mobile menu animation
  * UPDATED: Added smooth transitions and hover effects
  * 
- * @description Navigation bar for unauthenticated users (guests) of the complaint system
- * @version 2.0.0 (Complete rewrite for complaint management)
+ * @description Navigation bar for unauthenticated users (guests) of StuFix complaint system
+ * @version 3.0.0 (StuFix branding)
  */
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Building2, ClipboardList, Info, Phone } from 'lucide-react';
+import { Menu, X, ClipboardList, Info, Phone } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const GuestNavbar = () => {
@@ -90,9 +90,13 @@ const GuestNavbar = () => {
       <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
         {/* Logo */}
         <Link to='/' className="flex items-center gap-2 font-bold text-2xl group">
-          <Building2 className="h-8 w-8 text-purple-600 group-hover:scale-110 transition-transform duration-300" />
+          <img 
+  src="/src/assets/stufix-logo.svg" 
+  alt="StuFix Logo" 
+  className="h-8 w-8 object-contain group-hover:scale-110 transition-transform duration-300"
+/>
           <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-            College Complaint System
+            StuFix
           </span>
         </Link>
 
@@ -140,6 +144,18 @@ const GuestNavbar = () => {
         >
           <X className="h-7 w-7 text-gray-700" />
         </button>
+
+        {/* Mobile Logo */}
+        <div className="flex items-center gap-2 mb-4">
+          <img 
+            src="/stufix-logo.svg" 
+            alt="StuFix Logo" 
+            className="h-10 w-10 object-contain"
+          />
+          <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            StuFix
+          </span>
+        </div>
 
         <div className="flex flex-col gap-8 text-center">
           {/* Mobile Navigation Links */}
@@ -204,8 +220,9 @@ const GuestNavbar = () => {
 
         {/* Mobile Footer Info */}
         <div className="absolute bottom-8 text-center text-sm text-gray-500">
-          <p>Available Departments:</p>
-          <p className="text-xs mt-1">Network | Cleaning | Carpentry | PC Maintenance | Plumbing | Electricity</p>
+          <p className="text-purple-600 font-semibold">StuFix - Student Complaint System</p>
+          <p className="text-xs mt-1">Available Departments:</p>
+          <p className="text-xs">Network | Cleaning | Carpentry | PC Maintenance | Plumbing | Electricity</p>
         </div>
       </div>
     </nav>

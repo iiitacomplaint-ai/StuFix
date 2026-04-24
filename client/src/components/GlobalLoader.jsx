@@ -1,14 +1,18 @@
+// components/GlobalLoader.jsx
 import React from 'react';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
-import LoadingPage from './LoadingPage';
+import ScrollLoading from './ScrollLoading';
 
 export default function GlobalLoader() {
   const isFetching = useIsFetching();
   const isMutating = useIsMutating();
+  const isLoading = isFetching + isMutating > 0;
 
-  if (isFetching + isMutating > 0) {
-    return <LoadingPage />;
+  console.log('GlobalLoader - isFetching:', isFetching, 'isMutating:', isMutating, 'isLoading:', isLoading);
+
+  if (!isLoading) {
+    return null;
   }
 
-  return null;
+  return <ScrollLoading message="Loading..." />;
 }

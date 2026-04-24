@@ -7,8 +7,7 @@ import { useDispatch } from "react-redux";
 import { setUser } from "../slices/userSlice";
 import FloatingBackground from "../components/FloatingBackground";
 import { useMutation } from "@tanstack/react-query";
-import LoadingPage from "../components/LoadingPage";
-import ErrorPage from "../components/ErrorPage";
+import ScrollLoading from "../components/ScrollLoading";
 
 const strongPasswordSchema = z.object({
   password: z.string()
@@ -33,7 +32,7 @@ function SignupPage() {
 
   const [step, setStep] = useState(1);
   const [otp, setOtp] = useState("");
-  const [otpToken, setOtpToken] = useState(""); // ✅ store otpToken from verifyOtp
+  const [otpToken, setOtpToken] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [otpSent, setOtpSent] = useState(false);
 
@@ -49,7 +48,7 @@ function SignupPage() {
     email: "",
     name: "",
     dob: "",
-    phone_number: "", // ✅ renamed to match backend
+    phone_number: "",
     password: "",
     cnfpassword: "",
   });
@@ -77,7 +76,7 @@ function SignupPage() {
     if (name === "password") checkPasswordStrength(value);
   };
 
-  // ✅ Send OTP — passes email and type as separate args
+  // ✅ Send OTP Mutation
   const sendOtpMutation = useMutation({
     mutationFn: async (email) => {
       const parseResult = emailSchema.safeParse({ email });
@@ -100,7 +99,7 @@ function SignupPage() {
     },
   });
 
-  // ✅ Verify OTP — passes args separately, saves otpToken
+  // ✅ Verify OTP Mutation
   const verifyOtpMutation = useMutation({
     mutationFn: async ({ email, otp, type }) => {
       if (!email || !otp || !type) {
@@ -113,7 +112,7 @@ function SignupPage() {
       return result;
     },
     onSuccess: (data) => {
-      setOtpToken(data.otpToken); // ✅ save for signup step
+      setOtpToken(data.otpToken);
       setOtp("");
       setStep(3);
     },
@@ -122,7 +121,7 @@ function SignupPage() {
     },
   });
 
-  // ✅ Signup — sends phone_number and otpToken correctly
+  // ✅ Signup Mutation
   const signupMutation = useMutation({
     mutationFn: async ({ name, email, password, cnfpassword, phone_number, dob }) => {
       if (!name || !email || !phone_number || !dob) {
@@ -143,9 +142,9 @@ function SignupPage() {
         email,
         password,
         cnfpassword,
-        phone_number, // ✅ matches backend field name
+        phone_number,
         dob,
-        otpToken,     // ✅ required by backend
+        otpToken,
       });
 
       if (!result.success) {
@@ -154,30 +153,30 @@ function SignupPage() {
       return result;
     },
     onSuccess: (result) => {
-  dispatch(setUser({
-    user: result.user,
-    workerDetails: result.workerDetails || null,
-    logedAt: Date.now(),
-  }));
-  toast.success("Signup successful. Logging you in...");
-  
-  const role = result.user?.role;
-  switch (role) {
-    case "admin":
-      navigate("/admin/dashboard", { replace: true });
-      break;
-    case "worker":
-      navigate("/worker/dashboard", { replace: true });
-      break;
-    case "user":
-      navigate("/user/dashboard", { replace: true });
-      break;
-    default:
-      toast.error("Invalid role. Redirecting to login.");
-      localStorage.removeItem("token");
-      navigate("/login");
-  }
-},
+      dispatch(setUser({
+        user: result.user,
+        workerDetails: result.workerDetails || null,
+        logedAt: Date.now(),
+      }));
+      toast.success("Signup successful. Logging you in...");
+      
+      const role = result.user?.role;
+      switch (role) {
+        case "admin":
+          navigate("/admin/dashboard", { replace: true });
+          break;
+        case "worker":
+          navigate("/worker/dashboard", { replace: true });
+          break;
+        case "user":
+          navigate("/user/dashboard", { replace: true });
+          break;
+        default:
+          toast.error("Invalid role. Redirecting to login.");
+          localStorage.removeItem("token");
+          navigate("/login");
+      }
+    },
     onError: (error) => {
       toast.error(error.message || "Something went wrong during signup");
     },
@@ -204,13 +203,25 @@ function SignupPage() {
       email: formData.email,
       password: formData.password,
       cnfpassword: formData.cnfpassword,
-      phone_number: formData.phone_number, // ✅ correct field name
+      phone_number: formData.phone_number,
       dob: formData.dob,
     });
   };
 
-  if (signupMutation.isPending) return <LoadingPage status="load" message="Creating account, please wait" />;
-  if (signupMutation.isError) return <ErrorPage message={signupMutation.error?.message || "Something went wrong"} />;
+  // ✅ Check if any mutation is loading
+  const isLoading = 
+    sendOtpMutation.isPending ||
+    verifyOtpMutation.isPending ||
+    signupMutation.isPending;
+
+  // ✅ Show ScrollLoading overlay when any mutation is pending
+  if (isLoading) {
+    let message = "Processing...";
+    if (sendOtpMutation.isPending) message = "Sending OTP...";
+    if (verifyOtpMutation.isPending) message = "Verifying OTP...";
+    if (signupMutation.isPending) message = "Creating your account...";
+    return <ScrollLoading message={message} />;
+  }
 
   return (
     <div className="relative min-h-screen bg-white overflow-hidden">
@@ -218,14 +229,19 @@ function SignupPage() {
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-2xl p-6 sm:p-8 md:p-10 w-full max-w-md border border-gray-200">
-          <h2 className="text-3xl font-bold text-center mb-2 text-gray-800">Sign Up</h2>
+          <h2 className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            Create Account
+          </h2>
+          <p className="text-center text-gray-500 mb-6">
+            Join IIIT Allahabad Complaint System
+          </p>
 
           {/* Step Indicator */}
           <div className="flex justify-center gap-2 mb-6">
             {[1, 2, 3].map(s => (
               <div
                 key={s}
-                className={`h-2 w-8 rounded-full transition-all ${step >= s ? "bg-indigo-600" : "bg-gray-200"}`}
+                className={`h-2 w-8 rounded-full transition-all ${step >= s ? "bg-purple-600" : "bg-gray-200"}`}
               />
             ))}
           </div>
@@ -236,32 +252,34 @@ function SignupPage() {
           >
             {/* ── Step 1: Email ── */}
             {step === 1 && (
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700">Email *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="you@example.com"
-                  required
-                />
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-700">Email Address *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="student@iiita.ac.in"
+                    required
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={sendOtpMutation.isPending}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg mt-3 font-medium transition-all disabled:opacity-60"
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-2 rounded-lg mt-2 font-medium transition-all disabled:opacity-60"
                 >
                   {sendOtpMutation.isPending ? "Sending OTP..." : "Send OTP"}
                 </button>
-              </div>
+              </>
             )}
 
             {/* ── Step 2: OTP Verification ── */}
             {step === 2 && (
               <>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-600">Email *</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-600">Email Address</label>
                   <input
                     type="email"
                     value={formData.email}
@@ -277,24 +295,23 @@ function SignupPage() {
                       type="text"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       placeholder="123456"
                       maxLength={6}
                       required
                     />
                   </div>
                   <button
-                    type="button"
-                    onClick={handleVerifyOtp}
+                    type="submit"
                     disabled={verifyOtpMutation.isPending}
-                    className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 rounded-lg font-medium text-sm disabled:opacity-60"
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-2 rounded-lg font-medium text-sm disabled:opacity-60"
                   >
                     {verifyOtpMutation.isPending ? "..." : "Verify"}
                   </button>
                 </div>
 
                 {/* Resend OTP */}
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 text-center">
                   <button
                     type="button"
                     onClick={handleResendOtp}
@@ -302,7 +319,7 @@ function SignupPage() {
                     className={`font-medium hover:underline ${
                       countdown > 0 || sendOtpMutation.isPending
                         ? "text-gray-400 cursor-not-allowed"
-                        : "text-indigo-600"
+                        : "text-purple-600"
                     }`}
                   >
                     {countdown > 0
@@ -325,7 +342,7 @@ function SignupPage() {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="John Doe"
                     required
                   />
@@ -338,7 +355,7 @@ function SignupPage() {
                     name="dob"
                     value={formData.dob}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
                 </div>
@@ -347,10 +364,10 @@ function SignupPage() {
                   <label className="block text-sm font-medium mb-1 text-gray-700">Phone Number *</label>
                   <input
                     type="tel"
-                    name="phone_number"  // ✅ matches backend + formData key
+                    name="phone_number"
                     value={formData.phone_number}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="9876543210"
                     required
                   />
@@ -363,16 +380,18 @@ function SignupPage() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
-                  <div className="mt-2 text-xs space-y-1">
-                    <p className={passwordStrength.length ? "text-green-600" : "text-gray-400"}>✔ At least 8 characters</p>
-                    <p className={passwordStrength.uppercase ? "text-green-600" : "text-gray-400"}>✔ Uppercase letter</p>
-                    <p className={passwordStrength.lowercase ? "text-green-600" : "text-gray-400"}>✔ Lowercase letter</p>
-                    <p className={passwordStrength.number ? "text-green-600" : "text-gray-400"}>✔ Number</p>
-                    <p className={passwordStrength.special ? "text-green-600" : "text-gray-400"}>✔ Special character</p>
-                  </div>
+                  {formData.password && (
+                    <div className="mt-2 text-xs space-y-1">
+                      <p className={passwordStrength.length ? "text-green-600" : "text-gray-400"}>✓ At least 8 characters</p>
+                      <p className={passwordStrength.uppercase ? "text-green-600" : "text-gray-400"}>✓ Uppercase letter</p>
+                      <p className={passwordStrength.lowercase ? "text-green-600" : "text-gray-400"}>✓ Lowercase letter</p>
+                      <p className={passwordStrength.number ? "text-green-600" : "text-gray-400"}>✓ Number</p>
+                      <p className={passwordStrength.special ? "text-green-600" : "text-gray-400"}>✓ Special character</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -382,7 +401,7 @@ function SignupPage() {
                     name="cnfpassword"
                     value={formData.cnfpassword}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
                   {formData.cnfpassword && formData.password !== formData.cnfpassword && (
@@ -393,7 +412,7 @@ function SignupPage() {
                 <button
                   type="submit"
                   disabled={signupMutation.isPending}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg mt-2 font-medium transition-all disabled:opacity-60"
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-2 rounded-lg mt-2 font-medium transition-all disabled:opacity-60"
                 >
                   {signupMutation.isPending ? "Creating Account..." : "Create Account"}
                 </button>
@@ -407,7 +426,7 @@ function SignupPage() {
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
-              className="font-semibold text-indigo-600 hover:underline focus:outline-none"
+              className="font-semibold text-purple-600 hover:underline focus:outline-none"
             >
               Login
             </button>

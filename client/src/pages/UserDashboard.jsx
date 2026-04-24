@@ -5,7 +5,7 @@
  * UPDATED: Includes withdraw, reopen, and change priority functionality
  *
  * @description Dashboard for users to view and manage their complaints
- * @version 4.0.0 (Modular components)
+ * @version 4.0.0 (Modular components with ScrollLoading)
  */
 
 import React, { useState } from 'react';
@@ -42,7 +42,7 @@ import {
 import UserProfileCard from '../components/UserProfileCard';
 import UserComplaintCard from '../components/UserComplaintCard';
 import UserSubmitComplaint from '../components/UserSubmitComplaint';
-import LoadingPage from '../components/LoadingPage';
+import ScrollLoading from '../components/ScrollLoading';
 import ErrorPage from '../components/ErrorPage';
 import useLogoutUser from '../utils/useLogoutUser';
 
@@ -65,12 +65,7 @@ const UserDashboard = () => {
   });
 
   // Fetch user's complaints
-  const {
-    data: complaintsData,
-    isLoading: complaintsLoading,
-    isError: complaintsError,
-    refetch,
-  } = useQuery({
+  const complaintsQuery = useQuery({
     queryKey: ['my-complaints', user?.user_id, filters],
     queryFn: () => getMyComplaints({ ...filters, page: 1, limit: 100 }),
     enabled: !!user?.user_id,
@@ -82,7 +77,7 @@ const UserDashboard = () => {
   });
 
   // Fetch dashboard stats
-  const { data: statsData, isLoading: statsLoading } = useQuery({
+  const statsQuery = useQuery({
     queryKey: ['user-dashboard-stats', user?.user_id],
     queryFn: () => getDashboardStats(),
     enabled: !!user?.user_id,
@@ -141,7 +136,7 @@ const UserDashboard = () => {
     },
   });
 
-  const complaintList = complaintsData?.complaints || [];
+  const complaintList = complaintsQuery.data?.complaints || [];
 
   // Calculate statistics from complaints
   const totalComplaints = complaintList.length;
@@ -152,7 +147,7 @@ const UserDashboard = () => {
   const closedCount = complaintList.filter((c) => c.status === 'Closed').length;
   const withdrawnCount = complaintList.filter((c) => c.status === 'Withdrawn').length;
 
-  const stats = statsData?.statistics || {
+  const stats = statsQuery.data?.statistics || {
     total_complaints: totalComplaints,
     pending: pendingCount,
     in_progress: inProgressCount,
@@ -197,6 +192,16 @@ const UserDashboard = () => {
       ? Math.round(((stats.resolved || 0) / stats.total_complaints) * 100)
       : 0;
 
+  // Check if any mutation is loading
+  const isMutating = 
+    createComplaintMutation.isPending ||
+    withdrawComplaintMutation.isPending ||
+    reopenComplaintMutation.isPending ||
+    changePriorityMutation.isPending;
+
+  // Check if data is loading
+  const isLoading = complaintsQuery.isLoading || statsQuery.isLoading;
+
   // Get user initials for avatar
   const getUserInitials = () => {
     if (!user?.name) return 'U';
@@ -227,11 +232,22 @@ const UserDashboard = () => {
     logout();
   };
 
-  if (complaintsLoading || statsLoading) {
-    return <LoadingPage status="load" message="Loading your dashboard..." />;
+  // Show ScrollLoading when data is loading
+  if (isLoading) {
+    return <ScrollLoading message="Loading your dashboard..." />;
   }
 
-  if (complaintsError) {
+  // Show ScrollLoading when any mutation is in progress
+  if (isMutating) {
+    let message = "Processing...";
+    if (createComplaintMutation.isPending) message = "Submitting your complaint...";
+    if (withdrawComplaintMutation.isPending) message = "Withdrawing complaint...";
+    if (reopenComplaintMutation.isPending) message = "Reopening complaint...";
+    if (changePriorityMutation.isPending) message = "Changing priority...";
+    return <ScrollLoading message={message} />;
+  }
+
+  if (complaintsQuery.isError) {
     return <ErrorPage type="error" message="Failed to load dashboard data" />;
   }
 
@@ -282,7 +298,8 @@ const UserDashboard = () => {
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setShowAddComplaint(true)}
-              className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md"
+              disabled={createComplaintMutation.isPending}
+              className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md disabled:opacity-50"
             >
               <PlusCircle className="h-5 w-5" />
               <span className="hidden sm:inline">Add Complaint</span>
@@ -503,6 +520,7 @@ const UserDashboard = () => {
               <h3 className="text-lg font-semibold text-gray-800">My Complaints</h3>
               <span className="text-sm text-gray-500">
                 Total: {complaintList.length} complaints
+                {complaintsQuery.isFetching && <span className="ml-2 text-purple-500 text-xs">(Refreshing...)</span>}
               </span>
             </div>
 

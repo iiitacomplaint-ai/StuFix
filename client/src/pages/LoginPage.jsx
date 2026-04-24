@@ -6,8 +6,8 @@ import { toast } from 'react-toastify';
 import { useDispatch } from "react-redux";
 import FloatingBackground from "../components/FloatingBackground";
 import { useMutation } from "@tanstack/react-query";
-import { setUser } from "../slices/userSlice";
-import LoadingPage from "../components/LoadingPage";
+import { setUser, resetUser } from "../slices/userSlice";
+import ScrollLoading from "../components/ScrollLoading";
 
 const loginSchema = z.object({
     email: z.string({ required_error: "Email is required" }).email("Invalid email address"),
@@ -56,7 +56,7 @@ function LoginPage() {
     const [countdown, setCountdown] = useState(0);
     const [forgot, setForgot] = useState(false);
     const [otp, setOtp] = useState("");
-    const [otpToken, setOtpToken] = useState(""); // ✅ store otpToken from verifyOtp
+    const [otpToken, setOtpToken] = useState("");
     const [otpsent, setOtpSent] = useState(false);
     const [step, setStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
@@ -97,14 +97,14 @@ function LoginPage() {
         return () => clearInterval(timer);
     }, [countdown]);
 
-    // ✅ Fixed: pass email and type as separate args
+    // ✅ Send OTP Mutation
     const sendOtpMutation = useMutation({
         mutationFn: async (email) => {
             const parseResult = forgotSchema.safeParse({ email });
             if (!parseResult.success) {
                 throw new Error('Enter a valid email ID');
             }
-            const result = await sendOtp(email, 'reset'); // ✅ separate args
+            const result = await sendOtp(email, 'reset');
             if (!result.success) {
                 throw new Error(result.message || 'Failed to send OTP');
             }
@@ -120,20 +120,20 @@ function LoginPage() {
         },
     });
 
-    // ✅ Fixed: pass args separately, save otpToken
+    // ✅ Verify OTP Mutation
     const verifyOtpMutation = useMutation({
         mutationFn: async ({ email, otp, type }) => {
             if (!email || !otp || !type) {
                 throw new Error("Email, OTP, and type are required.");
             }
-            const result = await verifyOtp(email, otp, type); // ✅ separate args
+            const result = await verifyOtp(email, otp, type);
             if (!result.success) {
                 throw new Error(result.message || 'OTP verification failed');
             }
             return result;
         },
         onSuccess: (data) => {
-            setOtpToken(data.otpToken); // ✅ save for reset password step
+            setOtpToken(data.otpToken);
             setOtp("");
             setStep(3);
         },
@@ -142,7 +142,7 @@ function LoginPage() {
         },
     });
 
-    // ✅ Fixed: pass email and password as separate args, include otpToken
+    // ✅ Reset Password Mutation
     const resetPasswordMutation = useMutation({
         mutationFn: async ({ email, password, cnfpassword }) => {
             if (password !== cnfpassword) {
@@ -155,7 +155,7 @@ function LoginPage() {
             if (!otpToken) {
                 throw new Error('OTP verification token missing. Please verify OTP again.');
             }
-            const result = await resetPassword(email, password, otpToken); // ✅ separate args + otpToken
+            const result = await resetPassword(email, password, otpToken);
             if (!result.success) {
                 throw new Error(result.message || 'Password reset failed');
             }
@@ -168,83 +168,76 @@ function LoginPage() {
                 workerDetails: result.workerDetails || null,
                 logedAt: Date.now(),
             }));
-            navigateByRole(result.user?.role, navigate); // ✅ correct roles
+            navigateByRole(result.user?.role, navigate);
         },
         onError: (error) => {
             toast.error(error.message || 'Something went wrong during password reset');
         },
     });
 
-    // ✅ Fixed: pass email and password as separate args
-    // In your LoginPage.jsx, update the loginMutation onSuccess:
-
-    // In your LoginPage.jsx, update the loginMutation:
-
-const loginMutation = useMutation({
-  mutationFn: async ({ email, password }) => {
-    const parseResult = loginSchema.safeParse({ email, password });
-    if (!parseResult.success) {
-      throw new Error(parseResult.error.errors[0]?.message || "Enter valid email and password");
-    }
-    const result = await login(email, password);
-    if (!result.success) {
-      throw new Error(result.message || 'Login failed');
-    }
-    return result;
-  },
-  onSuccess: (result) => {
-    const { token, user } = result;
-    
-    console.log('🔐 Login successful:', { 
-      role: user?.role, 
-      name: user?.name,
-      email: user?.email 
+    // ✅ Login Mutation
+    const loginMutation = useMutation({
+        mutationFn: async ({ email, password }) => {
+            const parseResult = loginSchema.safeParse({ email, password });
+            if (!parseResult.success) {
+                throw new Error(parseResult.error.errors[0]?.message || "Enter valid email and password");
+            }
+            const result = await login(email, password);
+            if (!result.success) {
+                throw new Error(result.message || 'Login failed');
+            }
+            return result;
+        },
+        onSuccess: (result) => {
+            const { token, user } = result;
+            
+            console.log('🔐 Login successful:', { 
+                role: user?.role, 
+                name: user?.name,
+                email: user?.email 
+            });
+            
+            if (!user?.role) {
+                console.error('❌ User object missing role!', user);
+                toast.error('Invalid user data. Please contact support.');
+                return;
+            }
+            
+            dispatch(setUser({
+                user: user,
+                token: token,
+                logedAt: Date.now(),
+            }));
+            
+            toast.success(`Welcome ${user.name}!`);
+            
+            setTimeout(() => {
+                const role = user.role;
+                console.log('🚀 Navigating based on role:', role);
+                
+                switch (role) {
+                    case "admin":
+                        navigate("/admin/dashboard", { replace: true });
+                        break;
+                    case "user":
+                        navigate("/user/dashboard", { replace: true });
+                        break;
+                    case "worker":
+                        navigate("/worker/dashboard", { replace: true });
+                        break;
+                    default:
+                        console.error('❌ Unknown role:', role);
+                        toast.error("Invalid role. Redirecting to login.");
+                        dispatch(resetUser());
+                        navigate("/login");
+                }
+            }, 200);
+        },
+        onError: (error) => {
+            console.error('❌ Login error:', error);
+            toast.error(error.message || "Invalid email or password");
+        },
     });
-    
-    // Verify user has role
-    if (!user?.role) {
-      console.error('❌ User object missing role!', user);
-      toast.error('Invalid user data. Please contact support.');
-      return;
-    }
-    
-    // Dispatch to Redux
-    dispatch(setUser({
-      user: user,
-      token: token,
-      logedAt: Date.now(),
-    }));
-    
-    toast.success(`Welcome ${user.name}!`);
-    
-    // Small delay to ensure Redux state is updated
-    setTimeout(() => {
-      const role = user.role;
-      console.log('🚀 Navigating based on role:', role);
-      
-      switch (role) {
-        case "admin":
-          navigate("/admin/dashboard", { replace: true });
-          break;
-        case "user":
-          navigate("/user/dashboard", { replace: true });
-          break;
-        case "worker":
-          navigate("/worker/dashboard", { replace: true });
-          break;
-        default:
-          console.error('❌ Unknown role:', role);
-          toast.error("Invalid role. Redirecting to login.");
-          dispatch(resetUser());
-          navigate("/login");
-      }
-    }, 200);
-  },
-  onError: (error) => {
-    console.error('❌ Login error:', error);
-    toast.error(error.message || "Invalid email or password");
-  },
-});
 
     const handleLogin = (e) => {
         e.preventDefault();
@@ -253,7 +246,7 @@ const loginMutation = useMutation({
 
     const handleSendOtp = (e) => {
         e.preventDefault();
-        sendOtpMutation.mutate(formData.email); // ✅ pass string directly
+        sendOtpMutation.mutate(formData.email);
     };
 
     const handleVerifyOtp = (e) => {
@@ -279,13 +272,16 @@ const loginMutation = useMutation({
         setCountdown(0);
     };
 
-    if (
+    // ✅ Check if any mutation is loading - MUST be after all mutations are defined
+    const isLoading = 
         resetPasswordMutation.isPending ||
         verifyOtpMutation.isPending ||
         sendOtpMutation.isPending ||
-        loginMutation.isPending
-    ) {
-        return <LoadingPage status="load" message="Please wait..." />;
+        loginMutation.isPending;
+
+    // ✅ Show ScrollLoading overlay when any mutation is pending
+    if (isLoading) {
+        return <ScrollLoading message="Processing your request..." />;
     }
 
     return (
@@ -355,7 +351,7 @@ const loginMutation = useMutation({
                                         disabled={loginMutation.isPending}
                                         className="w-full text-white py-3 rounded-lg font-medium bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg disabled:opacity-70"
                                     >
-                                        {loginMutation.isPending ? 'Logging In...' : 'Log In'}
+                                        Log In
                                     </button>
                                 </div>
                             </>
@@ -385,7 +381,7 @@ const loginMutation = useMutation({
                                             type="button"
                                             className="w-full text-white py-2 rounded-lg font-medium text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-70"
                                         >
-                                            {sendOtpMutation.isPending ? '...' : 'Send OTP'}
+                                            Send OTP
                                         </button>
                                     </div>
                                 )}
@@ -421,7 +417,7 @@ const loginMutation = useMutation({
                                                 type="button"
                                                 className="w-full text-white py-2 rounded-lg font-medium text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-70"
                                             >
-                                                {verifyOtpMutation.isPending ? '...' : 'Verify OTP'}
+                                                Verify OTP
                                             </button>
                                         </div>
 
@@ -501,7 +497,7 @@ const loginMutation = useMutation({
                                                 disabled={resetPasswordMutation.isPending}
                                                 className="w-full text-white py-3 rounded-lg font-medium bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg disabled:opacity-70"
                                             >
-                                                {resetPasswordMutation.isPending ? 'Resetting...' : 'Reset Password'}
+                                                Reset Password
                                             </button>
                                         </div>
                                     </>
