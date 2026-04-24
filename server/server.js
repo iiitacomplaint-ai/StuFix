@@ -11,15 +11,56 @@ const userRoutes = require("./routes/userRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const workerRoutes = require("./routes/workerRoutes");
 
-// ---------------- Middleware ----------------
+// ---------------- CORS Configuration (FIX HERE) ----------------
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:5173',
+  'https://www.stufix.space',
+  'https://stufix.space',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
 
-// CORS (change frontend URL when deployed)
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*",
-    credentials: true
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl, postman)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        console.log('Blocked origin:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin'
+    ],
+    exposedHeaders: ['Authorization'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   })
 );
+
+// ---------------- Additional Security Headers ----------------
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -59,10 +100,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal Server Error",
-    error:
-      process.env.NODE_ENV === "development"
-        ? err.stack
-        : undefined
+    error: process.env.NODE_ENV === "development" ? err.stack : undefined
   });
 });
 
@@ -77,9 +115,8 @@ async function startServer() {
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log(
-        `📋 Environment: ${process.env.NODE_ENV || "development"}`
-      );
+      console.log(`📋 Environment: ${process.env.NODE_ENV || "development"}`);
+      console.log(`🔗 CORS enabled for: ${allowedOrigins.join(', ')}`);
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
