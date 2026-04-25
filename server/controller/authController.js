@@ -510,38 +510,36 @@
 //   changePassword
 // };
 
-require('dotenv').config(); // ← MUST be first line
+require('dotenv').config();
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const { generateToken, generateOtpToken, verifyOtpToken } = require('../utils/utility');
 const { mailFormat, setOtp, verifyOtp, generateOtp } = require('../utils/otp');
-const nodemailer = require('nodemailer');
+
 
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
-// Create Brevo SMTP transporter
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_SMTP_USER,
-    pass: process.env.BREVO_SMTP_PASSWORD
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
 
-// Verify SMTP connection
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ SMTP connection error:', error.message);
-    console.warn('⚠️  Check BREVO_SMTP_USER and BREVO_SMTP_PASSWORD in your .env file');
-  } else {
-    console.log('✅ SMTP server is ready to send emails');
-  }
-});
+const SibApiV3Sdk = require('sib-api-v3-sdk');
+
+const brevoClient = SibApiV3Sdk.ApiClient.instance;
+brevoClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
+const emailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+
+const sendEmail = async ({ to, toName = '', subject, html }) => {
+  const mail = new SibApiV3Sdk.SendSmtpEmail();
+  mail.sender = {
+    name: process.env.BREVO_FROM_NAME || 'StuFix',
+    email: process.env.BREVO_FROM_EMAIL || 'iiitacomplaint@gmail.com'
+  };
+  mail.to = [{ email: to, name: toName }];
+  mail.subject = subject;
+  mail.htmlContent = html;
+
+  const info = await emailApi.sendTransacEmail(mail);
+  console.log('✅ Email sent via Brevo API:', info.messageId);
+  return info;
+};
 
 const sendotp = async (req, res) => {
   console.log('request received');
@@ -592,7 +590,7 @@ const sendotp = async (req, res) => {
 
     const otp = generateOtp();
     const result = await setOtp({ email, otp, type });
-    
+
     if (!result || !result.status) {
       return res.status(500).json({
         success: false,
@@ -600,18 +598,12 @@ const sendotp = async (req, res) => {
       });
     }
 
-    // Send email using Brevo SMTP
-    const emailHtml = mailFormat(otp);
-    
-    const mailOptions = {
-      from: `"${process.env.BREVO_FROM_NAME || 'StuFix'}" <${process.env.BREVO_FROM_EMAIL || 'noreply@stufix.space'}>`,
+    // Send OTP email via Brevo HTTP API
+    await sendEmail({
       to: email,
       subject: 'StuFix - Your OTP Verification Code',
-      html: emailHtml,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ OTP email sent successfully:', info.messageId);
+      html: mailFormat(otp)
+    });
 
     const otpToken = generateOtpToken({ email, type });
 
@@ -631,6 +623,7 @@ const sendotp = async (req, res) => {
   }
 };
 
+// All other functions stay exactly the same — no changes needed
 const signup = async (req, res) => {
   console.log("api hit");
   const { name, email, password, cnfpassword, phone_number, dob, otpToken } = req.body;
@@ -822,7 +815,7 @@ const resetPassword = async (req, res) => {
 
     const updatedUser = updateResult.rows[0];
     const token = generateToken(updatedUser);
-    
+
     return res.status(200).json({
       success: true,
       message: "Password reset successful.",
@@ -855,7 +848,7 @@ const verifyOtpCont = async (req, res) => {
     }
 
     const otpToken = generateOtpToken({ email, type });
-    
+
     return res.status(200).json({
       success: true,
       message: "OTP verified successfully.",
@@ -875,27 +868,27 @@ const verifyOtpCont = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    
+
     const result = await pool.query(
       `SELECT user_id, name, email, phone_number, role, department, created_at, updated_at 
        FROM users 
        WHERE user_id = $1`,
       [userId]
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     return res.status(200).json({
       success: true,
       message: 'Profile retrieved successfully',
       user: result.rows[0]
     });
-    
+
   } catch (error) {
     console.error('Get profile error:', error);
     return res.status(500).json({
@@ -910,7 +903,7 @@ const updateProfile = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const { name, phone_number } = req.body;
-    
+
     const result = await pool.query(
       `UPDATE users 
        SET name = COALESCE($1, name),
@@ -920,13 +913,13 @@ const updateProfile = async (req, res) => {
        RETURNING user_id, name, email, phone_number, role, department, created_at, updated_at`,
       [name, phone_number, userId]
     );
-    
+
     return res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
       user: result.rows[0]
     });
-    
+
   } catch (error) {
     console.error('Update profile error:', error);
     return res.status(500).json({
@@ -940,29 +933,29 @@ const updateProfile = async (req, res) => {
 const changePassword = async (req, res) => {
   const { current_password, new_password } = req.body;
   const userId = req.user.user_id;
-  
+
   if (!current_password || !new_password) {
     return res.status(400).json({
       success: false,
       message: 'Current password and new password are required'
     });
   }
-  
+
   if (!strongPasswordRegex.test(new_password)) {
     return res.status(400).json({
       success: false,
       message: 'New password must be at least 8 characters long, include uppercase, lowercase, number, and special character.'
     });
   }
-  
+
   try {
     const result = await pool.query(
       'SELECT password FROM users WHERE user_id = $1',
       [userId]
     );
-    
+
     const user = result.rows[0];
-    
+
     const isMatch = await bcrypt.compare(current_password, user.password);
     if (!isMatch) {
       return res.status(401).json({
@@ -970,19 +963,19 @@ const changePassword = async (req, res) => {
         message: 'Current password is incorrect'
       });
     }
-    
+
     const hashedPassword = await bcrypt.hash(new_password, 10);
-    
+
     await pool.query(
       'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2',
       [hashedPassword, userId]
     );
-    
+
     return res.status(200).json({
       success: true,
       message: 'Password changed successfully'
     });
-    
+
   } catch (error) {
     console.error('Change password error:', error);
     return res.status(500).json({
