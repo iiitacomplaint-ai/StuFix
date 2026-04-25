@@ -532,7 +532,7 @@ const sendEmail = async ({ to, toName = '', subject, html }) => {
     name: process.env.BREVO_FROM_NAME || 'StuFix',
     email: process.env.BREVO_FROM_EMAIL || 'iiitacomplaint@gmail.com'
   };
-  mail.to = [{ email: to, name: toName }];
+  mail.to = [{ email: to, name: toName || to }]; // ← fallback to email if name is empty
   mail.subject = subject;
   mail.htmlContent = html;
 
