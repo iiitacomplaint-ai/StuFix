@@ -281,7 +281,7 @@ Base URL: `/api`
 
 ## 🏆 Project Status & Roadmap
 
-**Version 1.0** (April 2025 – April 2026) — Full functionality as described above.
+**Version 1.0** (Jan 2026 – April 2026) — Full functionality as described above.
 
 **Planned for future releases:**
 
