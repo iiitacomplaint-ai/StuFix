@@ -303,7 +303,7 @@ Base URL: `/api`
 
 **Department of Information Technology**  
 Indian Institute of Information Technology, Allahabad  
-Academic Year 2024–2025
+Academic Year 2025–2026
 
 ---
 
