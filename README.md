@@ -3,10 +3,10 @@
 <h1>🏫 StuFix</h1>
 <p><strong>College Complaint Management System</strong></p>
 
-[![Live Demo](https://img.shields.io/badge/🔗%20Live%20Demo-stu--fox.vercel.app-blue?style=for-the-badge)](https://stu-fox.vercel.app)
-[![Node.js](https://img.shields.io/badge/Node.js-Express-green?style=for-the-badge&logo=node.js)](https://nodejs.org)
-[![React](https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-316192?style=for-the-badge&logo=postgresql)](https://supabase.com)
+[![Live Demo](https://img.shields.io/badge/🔗%20Live%20Demo-stufix.space-blue?style=for-the-badge)](https://stufix.space)
+[![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-00E5CC?style=for-the-badge&logo=postgresql&logoColor=white)](https://neon.tech)
 
 <p>
   A full‑stack web application that digitises and streamlines the process of lodging, tracking, and resolving infrastructure and service complaints within a college campus — bringing <strong>transparency, accountability, and efficiency</strong> to campus facility management.
@@ -33,6 +33,7 @@ In most college campuses, complaints about broken networks, faulty plumbing, or 
 
 <details>
 <summary><strong>👨‍🎓 For Students</strong></summary>
+<br>
 
 - Submit complaints under **6 categories**: Network, Cleaning, Carpentry, PC Maintenance, Plumbing, Electricity
 - Set priority: **Low / Medium / High**
@@ -47,6 +48,7 @@ In most college campuses, complaints about broken networks, faulty plumbing, or 
 
 <details>
 <summary><strong>🛠️ For Workers (Maintenance Staff)</strong></summary>
+<br>
 
 - Log in to a **department‑scoped** dashboard
 - View only complaints **assigned to them** by the admin
@@ -58,9 +60,10 @@ In most college campuses, complaints about broken networks, faulty plumbing, or 
 
 <details>
 <summary><strong>👔 For Admin (Administrator)</strong></summary>
+<br>
 
-- **Full visibility** over all complaints (across all users, departments)
-- Assign any complaint to a worker from the matching department
+- **Full visibility** over all complaints across all users and departments
+- Assign or **reassign** any complaint to a worker from the matching department
 - Add or delete worker accounts
 - View **analytics dashboard**: complaint counts by status, category, and resolution rate
 - Access the **complete audit log** for every complaint
@@ -88,7 +91,7 @@ In most college campuses, complaints about broken networks, faulty plumbing, or 
 Every significant action is **immutably logged** in the database:
 
 - ✅ Complaint creation / withdrawal / reopening
-- ✅ Worker assignment (by admin)
+- ✅ Worker assignment and reassignment (by admin)
 - ✅ Every status change — old → new, who changed it, when
 - ✅ Resolution remarks and withdrawal reasons
 
@@ -102,9 +105,10 @@ Every significant action is **immutably logged** in the database:
 |---|---|
 | Frontend | React.js + Vite + Tailwind CSS |
 | Backend | Node.js + Express.js (REST API) |
-| Database | PostgreSQL 14+ (hosted on Supabase) |
+| Database | PostgreSQL (hosted on **Neon**) |
 | Media Storage | Cloudinary (CDN for images/videos) |
-| Authentication | JWT, bcrypt, OTP via Email (Nodemailer / Resend) |
+| Authentication | JWT + bcrypt + Email OTP |
+| Email Service | **Nodemailer + Brevo (SMTP)** |
 | HTTP Client | TanStack Query + Axios Interceptors |
 | Deployment | Client: Vercel · Server: Render |
 
@@ -143,7 +147,7 @@ npm install
 npm run dev                 # Runs on http://localhost:5173
 ```
 
-> **Note:** You will need a running PostgreSQL instance (local or remote) and a Cloudinary account with an unsigned upload preset for media uploads to work.
+> **Note:** You will need a Neon PostgreSQL connection string, a Cloudinary account with an unsigned upload preset, and Brevo SMTP credentials for email/OTP to work.
 
 ---
 
@@ -153,21 +157,37 @@ npm run dev                 # Runs on http://localhost:5173
 <summary><strong>📄 server/.env</strong></summary>
 
 ```env
-DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
+# Database (Neon PostgreSQL)
+DATABASE_URL=postgresql://<user>:<password>@<host>/neondb?sslmode=require&channel_binding=require
+
+# Server
 PORT=3000
+NODE_ENV=development
 
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRY=7d
+# JWT
+JWT_SECRET=your_jwt_secret_key_min_32_characters_long
+OTP_SECRET=your_random_otp_secret_min_32_characters
 
-EMAIL_SERVICE=smtp.gmail.com
+# Email — Nodemailer via Brevo SMTP
 EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
+EMAIL_PASS=your_brevo_smtp_password
+BREVO_FROM_EMAIL=your_email@gmail.com
+BREVO_FROM_NAME=StuFix
 
+# Frontend origin (for CORS)
+FRONTEND_URL=https://stufix.space
+
+# Cloudinary
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-OTP_SECRET=your_otp_secret_for_jwt
+# Admin seed account
+ADMIN_EMAIL=admin@college.edu
+
+# File upload limits
+MAX_FILE_SIZE=5242880
+ALLOWED_FILE_TYPES=image/jpeg,image/png,image/jpg,video/mp4
 ```
 
 </details>
@@ -198,23 +218,64 @@ VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset
 
 > The admin account is seeded automatically when the server starts if it does not already exist.
 
-### Key API Endpoints `(base: /api)`
+---
+
+## 🔌 API Reference
+
+Base URL: `/api`
+
+### Auth — `/api/auth`
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `POST` | `/send-otp` | ❌ | Request OTP for signup / password reset |
+| `POST` | `/verify-otp` | ❌ | Verify OTP and receive token |
+| `POST` | `/signup` | ❌ | Register a new user |
+| `POST` | `/login` | ❌ | Login and receive JWT |
+| `POST` | `/reset-password` | ❌ | Reset password using OTP token |
+| `GET` | `/profile` | ✅ | Get logged‑in user's profile |
+| `PUT` | `/profile` | ✅ | Update profile |
+| `PUT` | `/change-password` | ✅ | Change password |
+| `POST` | `/logout` | ✅ | Logout |
+
+### User (Student) — `/api/user`
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/auth/signup` | Register a new user |
-| `POST` | `/auth/send-otp` | Request OTP for signup / reset |
-| `POST` | `/auth/verify-otp` | Verify OTP and get token |
-| `POST` | `/auth/login` | Login and receive JWT |
-| `POST` | `/auth/reset-password` | Reset password using OTP token |
-| `GET` | `/user/my-complaints` | List logged‑in user's complaints |
-| `POST` | `/user/complaint` | Create a new complaint |
-| `PUT` | `/user/complaint/withdraw` | Withdraw a complaint |
-| `PUT` | `/user/complaint/reopen` | Reopen a complaint |
-| `GET` | `/admin/all-complaints` | *(Admin)* View all complaints |
-| `PUT` | `/admin/assign` | *(Admin)* Assign complaint to worker |
-| `GET` | `/worker/assigned-complaints` | *(Worker)* View assigned complaints |
-| `PUT` | `/worker/update-status` | *(Worker)* Change complaint status |
+| `GET` | `/profile` | Get student profile |
+| `GET` | `/dashboard` | Get personal dashboard stats |
+| `POST` | `/complaints` | Submit a new complaint |
+| `GET` | `/complaints` | List all my complaints |
+| `GET` | `/complaints/:id` | Get complaint details |
+| `GET` | `/complaints/:id/history` | Get full status history |
+| `PUT` | `/complaints/:id/withdraw` | Withdraw an open complaint |
+| `PUT` | `/complaints/:id/reopen` | Reopen a resolved/withdrawn complaint |
+| `PUT` | `/complaints/:id/priority` | Change complaint priority |
+
+### Admin — `/api/admin`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/createWorker` | Create a new worker account |
+| `GET` | `/getWorkers` | List all workers |
+| `DELETE` | `/deleteWorker/:user_id` | Delete a worker account |
+| `GET` | `/getAllComplaints` | View all complaints (all departments) |
+| `POST` | `/assignComplaint` | Assign a complaint to a worker |
+| `PUT` | `/reassignComplaint` | Reassign a complaint to another worker |
+| `PUT` | `/updateComplaintStatus` | Manually update complaint status |
+| `GET` | `/getAuditLogs` | View complete system audit log |
+
+### Worker — `/api/worker`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/profile` | Get worker profile |
+| `GET` | `/dashboard` | Get worker dashboard stats |
+| `GET` | `/complaints` | View assigned complaints |
+| `GET` | `/complaints/:id` | Get specific complaint details |
+| `GET` | `/complaints/:id/history` | Get complaint status history |
+| `PUT` | `/complaints/:id/status` | Update complaint status |
+| `POST` | `/complaints/:id/remark` | Add a resolution remark |
 
 ---
 
@@ -240,8 +301,8 @@ VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset
 | Aashray Mahajan | Developer |
 | Laxmi Narayan Meena | Developer |
 
-**Department of Information Technology**
-Indian Institute of Information Technology, Allahabad
+**Department of Information Technology**  
+Indian Institute of Information Technology, Allahabad  
 Academic Year 2024–2025
 
 ---
@@ -250,7 +311,7 @@ Academic Year 2024–2025
 
 This project was developed as a browser‑based software system for academic evaluation. It uses open‑source components:
 
-`Express.js` · `React` · `Tailwind CSS` · `PostgreSQL` · `Cloudinary` · `bcrypt` · `jsonwebtoken`
+`Express.js` · `React` · `Tailwind CSS` · `PostgreSQL` · `Neon` · `Cloudinary` · `Nodemailer` · `Brevo` · `bcrypt` · `jsonwebtoken`
 
 Special thanks to the faculty of **IIIT Allahabad** for guidance and evaluation.
 
